@@ -3,25 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>เอาชีวิตรอดในป่าใหญ่ - 2D Survival Game</title>
-  <!-- โหลดฟอนต์ Kanit และ Inter เพื่อความสวยงามและอ่านง่ายทั้งภาษาไทยและตัวเลข -->
+  <title>เอาชีวิตรอดในป่าอาถรรพ์ - Wilderness Survival 2D</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <!-- โหลด Tailwind CSS สำหรับจัดหน้าจอและ UI -->
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     * {
       box-sizing: border-box;
       user-select: none;
       -webkit-user-select: none;
-      touch-action: manipulation;
+      touch-action: none;
     }
 
     body {
       margin: 0;
       padding: 0;
-      background-color: #090d16;
+      background-color: #060911;
       color: #f8fafc;
       font-family: 'Kanit', 'Inter', sans-serif;
       overflow: hidden;
@@ -36,49 +34,44 @@
       cursor: crosshair;
     }
 
-    /* เอฟเฟกต์กระจกฝ้าสำหรับ UI */
     .glass-panel {
-      background: rgba(15, 23, 42, 0.82);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      background: rgba(10, 16, 29, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.65);
     }
 
-    /* สไตล์ปุ่มกดแบบเกม */
     .game-btn {
-      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.4);
+      transition: all 0.14s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.45);
     }
     .game-btn:active:not(:disabled) {
       transform: translateY(2px);
-      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
     }
     .game-btn:disabled {
-      opacity: 0.45;
+      opacity: 0.4;
       cursor: not-allowed;
-      filter: grayscale(60%);
+      filter: grayscale(70%);
     }
 
-    /* ปุ่มควบคุมบนหน้าจอมือถือ */
-    .touch-pad-btn {
-      background: rgba(30, 41, 59, 0.75);
-      border: 2px solid rgba(56, 189, 248, 0.4);
-      backdrop-filter: blur(4px);
-      transition: background 0.1s, transform 0.1s;
+    .touch-btn {
+      background: rgba(15, 23, 42, 0.78);
+      border: 2px solid rgba(56, 189, 248, 0.45);
+      backdrop-filter: blur(6px);
+      transition: transform 0.08s, background 0.08s, border-color 0.08s;
     }
-    .touch-pad-btn:active, .touch-pad-btn.active {
-      background: rgba(56, 189, 248, 0.45);
+    .touch-btn:active, .touch-btn.active {
+      background: rgba(56, 189, 248, 0.35);
       border-color: #38bdf8;
-      transform: scale(0.94);
+      transform: scale(0.93);
     }
 
-    /* แถบสถานะ */
     .bar-fill {
-      transition: width 0.2s ease-out;
+      transition: width 0.18s ease-out;
     }
 
-    /* ซ่อน Scrollbar */
     ::-webkit-scrollbar {
       display: none;
     }
@@ -86,190 +79,222 @@
 </head>
 <body class="relative select-none">
 
-  <!-- พื้นที่วาดกราฟิกเกมหลัก -->
+  <!-- พื้นที่วาดกราฟิกหลัก -->
   <canvas id="gameCanvas"></canvas>
 
-  <!-- ==================== HUD: แถบสถานะด้านบน ==================== -->
+  <!-- ==================== HUD: แถบสถานะระหว่างเล่น ==================== -->
   <div id="hudContainer" class="hidden pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-2 sm:p-4">
     
-    <!-- แถวบนสุด: ค่าพลังเอาชีวิตรอด + เวลา + ทรัพยากร -->
-    <div class="flex flex-wrap items-start justify-between gap-2">
+    <!-- ส่วนบน: ค่าพลัง + เวลา/บอส + แผนที่ย่อ/กระเป๋า -->
+    <div class="flex items-start justify-between gap-2">
       
-      <!-- กล่องค่าพลัง 4 อย่าง (HP, Hunger, Thirst, Stamina) -->
-      <div class="glass-panel pointer-events-auto rounded-2xl p-2.5 sm:p-3 w-48 sm:w-64 space-y-1.5">
-        <!-- เลือด (HP) -->
+      <!-- ซ้ายบน: 4 ค่าพลังเอาชีวิตรอด -->
+      <div class="glass-panel pointer-events-auto rounded-2xl p-2.5 sm:p-3 w-44 sm:w-60 space-y-1.5">
         <div>
-          <div class="flex justify-between text-xs font-semibold mb-0.5">
-            <span class="text-rose-400 flex items-center gap-1">❤️ พลังชีวิต (HP)</span>
+          <div class="flex justify-between text-[11px] sm:text-xs font-semibold mb-0.5">
+            <span class="text-rose-400">❤️ พลังชีวิต</span>
             <span id="hpText" class="font-mono text-slate-200">100/100</span>
           </div>
-          <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+          <div class="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-slate-700/80">
             <div id="hpBar" class="bar-fill h-full bg-gradient-to-r from-rose-600 to-rose-400 rounded-full" style="width: 100%"></div>
           </div>
         </div>
 
-        <!-- ความหิว (Hunger) -->
         <div>
-          <div class="flex justify-between text-xs font-semibold mb-0.5">
-            <span class="text-amber-400 flex items-center gap-1">🍖 ความอิ่ม</span>
+          <div class="flex justify-between text-[11px] sm:text-xs font-semibold mb-0.5">
+            <span class="text-amber-400">🍖 ความอิ่ม</span>
             <span id="hungerText" class="font-mono text-slate-200">100%</span>
           </div>
-          <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+          <div class="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-700/80">
             <div id="hungerBar" class="bar-fill h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full" style="width: 100%"></div>
           </div>
         </div>
 
-        <!-- ความกระหาย (Thirst) -->
         <div>
-          <div class="flex justify-between text-xs font-semibold mb-0.5">
-            <span class="text-sky-400 flex items-center gap-1">💧 น้ำดื่ม</span>
+          <div class="flex justify-between text-[11px] sm:text-xs font-semibold mb-0.5">
+            <span class="text-sky-400">💧 น้ำดื่ม</span>
             <span id="thirstText" class="font-mono text-slate-200">100%</span>
           </div>
-          <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+          <div class="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-700/80">
             <div id="thirstBar" class="bar-fill h-full bg-gradient-to-r from-sky-600 to-sky-400 rounded-full" style="width: 100%"></div>
           </div>
         </div>
 
-        <!-- พลังงานวิ่ง (Stamina) -->
         <div>
-          <div class="flex justify-between text-xs font-semibold mb-0.5">
-            <span class="text-emerald-400 flex items-center gap-1">⚡ แรงกาย</span>
+          <div class="flex justify-between text-[11px] sm:text-xs font-semibold mb-0.5">
+            <span class="text-emerald-400">⚡ แรงกาย</span>
             <span id="staminaText" class="font-mono text-slate-200">100%</span>
           </div>
-          <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+          <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-700/80">
             <div id="staminaBar" class="bar-fill h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full" style="width: 100%"></div>
           </div>
         </div>
       </div>
 
-      <!-- กล่องกลางบน: วันที่ & ช่วงเวลา & แจ้งเตือน -->
-      <div class="flex flex-col items-center gap-1.5 order-last sm:order-none w-full sm:w-auto">
-        <div class="glass-panel pointer-events-auto rounded-2xl px-4 py-2 flex items-center gap-3">
-          <span id="timeIcon" class="text-2xl">☀️</span>
+      <!-- กลางบน: นาฬิกาวัน-คืน + แถบเลือดบอส + ข้อความแจ้งเตือน -->
+      <div class="flex flex-col items-center gap-1.5 flex-1 max-w-md mx-auto">
+        <div class="glass-panel pointer-events-auto rounded-2xl px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-2.5 sm:gap-3">
+          <span id="timeIcon" class="text-xl sm:text-2xl">☀️</span>
           <div class="text-left">
-            <div class="text-sm sm:text-base font-bold text-sky-400 leading-tight">วันที่ <span id="dayCount">1</span></div>
-            <div id="timeLabel" class="text-xs text-slate-300">ช่วงกลางวัน</div>
+            <div class="text-xs sm:text-sm font-bold text-sky-400 leading-tight">วันที่ <span id="dayCount">1</span></div>
+            <div id="timeLabel" class="text-[11px] text-slate-300">กลางวัน</div>
           </div>
-          <div class="h-7 w-px bg-slate-700 mx-1"></div>
-          <!-- ปุ่มเปิด-ปิดเสียง และ ปุ่มวิธีเล่น/หยุดเกม -->
-          <button id="muteBtn" title="เปิด/ปิดเสียง" class="game-btn bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 rounded-xl border border-slate-600 text-sm">
+          <div class="h-6 w-px bg-slate-700"></div>
+          <button id="muteBtn" title="เปิด/ปิดเสียง" class="game-btn bg-slate-800 hover:bg-slate-700 text-slate-200 p-1.5 sm:p-2 rounded-xl border border-slate-600 text-xs sm:text-sm">
             🔊
           </button>
-          <button id="pauseBtn" title="คู่มือ / หยุดชั่วคราว" class="game-btn bg-slate-800 hover:bg-slate-700 text-sky-400 px-3 py-1.5 rounded-xl border border-slate-600 text-xs sm:text-sm font-semibold">
-            ❓ วิธีเล่น
+          <button id="pauseBtn" title="คู่มือ / หยุดเกม" class="game-btn bg-slate-800 hover:bg-slate-700 text-sky-400 px-2.5 py-1.5 rounded-xl border border-slate-600 text-xs font-semibold">
+            📖 คู่มือ
           </button>
         </div>
 
-        <!-- กล่องข้อความแจ้งเตือนแบบลอย -->
-        <div id="toastMessage" class="opacity-0 transition-opacity duration-300 bg-slate-900/90 border border-sky-400/50 text-sky-200 text-xs sm:text-sm px-3.5 py-1.5 rounded-full shadow-lg">
+        <!-- แถบเลือดบอส (แสดงเฉพาะตอนบอสปรากฏตัว) -->
+        <div id="bossHud" class="hidden glass-panel w-full rounded-2xl p-2 border-purple-500/60 bg-slate-950/90">
+          <div class="flex justify-between items-center text-xs font-bold mb-1 px-1">
+            <span id="bossNameText" class="text-purple-400 flex items-center gap-1">👑 ราชันย์กวางอเวจี (เฟส 1)</span>
+            <span id="bossHpText" class="font-mono text-purple-200">450/450</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-purple-500/40">
+            <div id="bossHpBar" class="bar-fill h-full bg-gradient-to-r from-purple-700 via-fuchsia-500 to-rose-500 rounded-full" style="width: 100%"></div>
+          </div>
+        </div>
+
+        <!-- กล่องข้อความแจ้งเตือนลอย -->
+        <div id="toastMessage" class="opacity-0 transition-opacity duration-300 bg-slate-900/95 border border-sky-400/50 text-sky-200 text-xs sm:text-sm px-3.5 py-1 rounded-full shadow-lg text-center">
           พร้อมเอาชีวิตรอด!
         </div>
       </div>
 
-      <!-- กล่องขวาบน: กระเป๋าทรัพยากร & อาวุธที่ถือ -->
-      <div class="glass-panel pointer-events-auto rounded-2xl p-2.5 sm:p-3 flex flex-col gap-2">
-        <div class="grid grid-cols-3 gap-2 text-center">
-          <div class="bg-slate-800/90 rounded-xl px-2.5 py-1.5 border border-slate-700">
-            <div class="text-base sm:text-lg">🪵</div>
-            <div class="text-[10px] text-slate-400">ไม้</div>
-            <div id="woodCount" class="text-xs sm:text-sm font-bold text-amber-300 font-mono">0</div>
-          </div>
-          <div class="bg-slate-800/90 rounded-xl px-2.5 py-1.5 border border-slate-700">
-            <div class="text-base sm:text-lg">🪨</div>
-            <div class="text-[10px] text-slate-400">หิน</div>
-            <div id="stoneCount" class="text-xs sm:text-sm font-bold text-slate-300 font-mono">0</div>
-          </div>
-          <div class="bg-slate-800/90 rounded-xl px-2.5 py-1.5 border border-slate-700">
-            <div class="text-base sm:text-lg">🍒</div>
-            <div class="text-[10px] text-slate-400">เบอร์รี่</div>
-            <div id="berryCount" class="text-xs sm:text-sm font-bold text-rose-400 font-mono">0</div>
-          </div>
+      <!-- ขวาบน: แผนที่ย่อ (Minimap) + กระเป๋าทรัพยากร -->
+      <div class="flex flex-col items-end gap-2">
+        <!-- แผนที่ย่อ -->
+        <div class="glass-panel pointer-events-auto rounded-2xl p-1.5 hidden sm:block">
+          <canvas id="minimapCanvas" width="124" height="124" class="rounded-xl bg-slate-950 border border-slate-800"></canvas>
         </div>
-        <div class="flex items-center justify-between bg-slate-900/80 px-3 py-1 rounded-xl border border-slate-700/80 text-xs">
-          <span class="text-slate-400">อุปกรณ์:</span>
-          <span id="weaponStatus" class="font-semibold text-sky-400">✊ มือเปล่า (ดาเมจ 15)</span>
+
+        <!-- กระเป๋าทรัพยากร -->
+        <div class="glass-panel pointer-events-auto rounded-2xl p-2 sm:p-2.5 flex flex-col gap-1.5">
+          <div class="grid grid-cols-3 gap-1.5 text-center">
+            <div class="bg-slate-900/90 rounded-xl px-2 py-1 border border-slate-700/80">
+              <div class="text-sm sm:text-base">🪵</div>
+              <div id="woodCount" class="text-xs font-bold text-amber-300 font-mono">0</div>
+            </div>
+            <div class="bg-slate-900/90 rounded-xl px-2 py-1 border border-slate-700/80">
+              <div class="text-sm sm:text-base">🪨</div>
+              <div id="stoneCount" class="text-xs font-bold text-slate-300 font-mono">0</div>
+            </div>
+            <div class="bg-slate-900/90 rounded-xl px-2 py-1 border border-slate-700/80">
+              <div class="text-sm sm:text-base">🍒</div>
+              <div id="berryCount" class="text-xs font-bold text-rose-400 font-mono">0</div>
+            </div>
+          </div>
+          <div class="bg-slate-900/80 px-2.5 py-1 rounded-xl border border-slate-700/80 text-[11px] text-center">
+            <span id="weaponStatus" class="font-semibold text-sky-400">✊ มือเปล่า (16)</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- แถวล่างสุด: เมนูคราฟต์ของ (ซ้าย/กลาง) และ ปุ่มควบคุมสำหรับมือถือ (ซ้าย-ขวา) -->
+    <!-- ส่วนล่าง: ปุ่มควบคุมมือถือ + แถบคราฟต์ของ 6 ช่อง -->
     <div class="flex flex-col gap-2">
       
-      <!-- แถบปุ่มควบคุมสัมผัสสำหรับมือถือ / แท็บเล็ต -->
+      <!-- ระบบควบคุมสัมผัสสำหรับมือถือ / แท็บเล็ต (Virtual Joystick + Action Buttons) -->
       <div id="mobileControls" class="flex justify-between items-end px-1 sm:px-4 md:hidden">
-        <!-- ปุ่มทิศทาง D-Pad -->
-        <div class="pointer-events-auto grid grid-cols-3 gap-1.5 w-36 h-36">
-          <div></div>
-          <button data-dir="up" class="touch-pad-btn rounded-2xl flex items-center justify-center text-xl text-white">▲</button>
-          <div></div>
-          <button data-dir="left" class="touch-pad-btn rounded-2xl flex items-center justify-center text-xl text-white">◀</button>
-          <button id="touchSprintBtn" class="touch-pad-btn rounded-2xl flex items-center justify-center text-xs font-bold text-emerald-300">วิ่ง</button>
-          <button data-dir="right" class="touch-pad-btn rounded-2xl flex items-center justify-center text-xl text-white">▶</button>
-          <div></div>
-          <button data-dir="down" class="touch-pad-btn rounded-2xl flex items-center justify-center text-xl text-white">▼</button>
-          <div></div>
+        <!-- จอยสติ๊กจำลองฝั่งซ้าย -->
+        <div id="joystickZone" class="pointer-events-auto relative w-32 h-32 rounded-full bg-slate-900/60 border-2 border-sky-400/35 backdrop-blur-sm flex items-center justify-center">
+          <div id="joystickKnob" class="w-12 h-12 rounded-full bg-sky-400/50 border-2 border-sky-300 shadow-lg pointer-events-none transition-transform duration-75"></div>
         </div>
 
-        <!-- ปุ่มแอ็กชัน (เก็บของ/ดื่มน้ำ และ โจมตี) -->
-        <div class="pointer-events-auto flex flex-col gap-2.5 items-end">
-          <button id="touchInteractBtn" class="touch-pad-btn w-20 h-14 rounded-2xl flex flex-col items-center justify-center text-amber-300 font-bold shadow-lg">
-            <span class="text-lg">✋</span>
-            <span class="text-[11px]">เก็บ/ดื่ม</span>
-          </button>
-          <button id="touchAttackBtn" class="touch-pad-btn w-20 h-16 rounded-2xl flex flex-col items-center justify-center text-rose-400 font-bold border-rose-500/50 shadow-lg">
+        <!-- ปุ่มแอ็กชันฝั่งขวา -->
+        <div class="pointer-events-auto flex flex-col gap-2 items-end">
+          <div class="flex gap-2">
+            <button id="touchSprintBtn" class="touch-btn w-14 h-14 rounded-2xl flex flex-col items-center justify-center text-emerald-300 font-bold shadow-lg">
+              <span class="text-base">⚡</span>
+              <span class="text-[10px]">วิ่ง</span>
+            </button>
+            <button id="touchInteractBtn" class="touch-btn w-16 h-14 rounded-2xl flex flex-col items-center justify-center text-amber-300 font-bold shadow-lg">
+              <span class="text-base">✋</span>
+              <span class="text-[10px]">เก็บ/ดื่ม</span>
+            </button>
+          </div>
+          <button id="touchAttackBtn" class="touch-btn w-24 h-16 rounded-2xl flex flex-col items-center justify-center text-rose-400 font-bold border-rose-500/60 shadow-lg">
             <span class="text-xl">⚔️</span>
             <span class="text-xs">โจมตี</span>
           </button>
         </div>
       </div>
 
-      <!-- แถบเมนูคราฟต์ของด่วน (Hotbar Crafting) -->
+      <!-- แถบเมนูคราฟต์ 6 อย่าง (ปุ่มลัด 1 - 6) -->
       <div class="flex justify-center">
-        <div class="glass-panel pointer-events-auto rounded-2xl p-2 flex flex-wrap justify-center gap-1.5 sm:gap-2.5 max-w-full">
+        <div class="glass-panel pointer-events-auto rounded-2xl p-1.5 sm:p-2 flex flex-wrap justify-center gap-1.5 sm:gap-2 max-w-full">
           
-          <!-- 1. ขวานหิน -->
-          <button id="craftAxeBtn" onclick="craftItem('axe')" class="game-btn bg-slate-800 hover:bg-slate-750 border border-slate-600 rounded-xl px-2.5 py-1.5 flex items-center gap-2 text-left">
-            <span class="text-xl">🪓</span>
+          <!-- [1] หอกไม้ -->
+          <button id="craftSpearBtn" onclick="craftItem('spear')" class="game-btn bg-slate-800/95 hover:bg-slate-700 border border-slate-600 rounded-xl px-2 py-1.5 flex items-center gap-1.5 text-left">
+            <span class="text-lg sm:text-xl">🔱</span>
             <div>
-              <div class="text-xs font-bold text-slate-100 flex items-center gap-1">
-                <span>ขวานหิน</span>
-                <span class="hidden sm:inline text-[10px] bg-slate-700 text-sky-300 px-1.5 rounded">[1]</span>
+              <div class="text-[11px] sm:text-xs font-bold text-slate-100 flex items-center gap-1">
+                <span>หอกไม้</span>
+                <span class="hidden sm:inline text-[10px] bg-slate-700 text-sky-300 px-1 rounded">1</span>
               </div>
-              <div id="axeCostText" class="text-[10px] text-slate-400">🪵3 🪨2</div>
+              <div id="spearCostText" class="text-[10px] text-slate-400">🪵4</div>
             </div>
           </button>
 
-          <!-- 2. กองไฟ -->
-          <button id="craftFireBtn" onclick="craftItem('campfire')" class="game-btn bg-slate-800 hover:bg-slate-750 border border-slate-600 rounded-xl px-2.5 py-1.5 flex items-center gap-2 text-left">
-            <span class="text-xl">🔥</span>
+          <!-- [2] ขวานหิน -->
+          <button id="craftAxeBtn" onclick="craftItem('axe')" class="game-btn bg-slate-800/95 hover:bg-slate-700 border border-slate-600 rounded-xl px-2 py-1.5 flex items-center gap-1.5 text-left">
+            <span class="text-lg sm:text-xl">🪓</span>
             <div>
-              <div class="text-xs font-bold text-orange-300 flex items-center gap-1">
+              <div class="text-[11px] sm:text-xs font-bold text-sky-300 flex items-center gap-1">
+                <span>ขวานหิน</span>
+                <span class="hidden sm:inline text-[10px] bg-slate-700 text-sky-300 px-1 rounded">2</span>
+              </div>
+              <div id="axeCostText" class="text-[10px] text-slate-400">🪵4 🪨3</div>
+            </div>
+          </button>
+
+          <!-- [3] กองไฟ -->
+          <button id="craftFireBtn" onclick="craftItem('campfire')" class="game-btn bg-slate-800/95 hover:bg-slate-700 border border-slate-600 rounded-xl px-2 py-1.5 flex items-center gap-1.5 text-left">
+            <span class="text-lg sm:text-xl">🔥</span>
+            <div>
+              <div class="text-[11px] sm:text-xs font-bold text-orange-300 flex items-center gap-1">
                 <span>กองไฟ</span>
-                <span class="hidden sm:inline text-[10px] bg-slate-700 text-sky-300 px-1.5 rounded">[2]</span>
+                <span class="hidden sm:inline text-[10px] bg-slate-700 text-sky-300 px-1 rounded">3</span>
               </div>
               <div class="text-[10px] text-slate-400">🪵5 🪨3</div>
             </div>
           </button>
 
-          <!-- 3. กำแพงไม้ -->
-          <button id="craftWallBtn" onclick="craftItem('wall')" class="game-btn bg-slate-800 hover:bg-slate-750 border border-slate-600 rounded-xl px-2.5 py-1.5 flex items-center gap-2 text-left">
-            <span class="text-xl">🧱</span>
+          <!-- [4] กำแพงไม้ -->
+          <button id="craftWallBtn" onclick="craftItem('wall')" class="game-btn bg-slate-800/95 hover:bg-slate-700 border border-slate-600 rounded-xl px-2 py-1.5 flex items-center gap-1.5 text-left">
+            <span class="text-lg sm:text-xl">🧱</span>
             <div>
-              <div class="text-xs font-bold text-amber-300 flex items-center gap-1">
-                <span>กำแพงไม้</span>
-                <span class="hidden sm:inline text-[10px] bg-slate-700 text-sky-300 px-1.5 rounded">[3]</span>
+              <div class="text-[11px] sm:text-xs font-bold text-amber-300 flex items-center gap-1">
+                <span>กำแพง</span>
+                <span class="hidden sm:inline text-[10px] bg-slate-700 text-sky-300 px-1 rounded">4</span>
               </div>
               <div class="text-[10px] text-slate-400">🪵4</div>
             </div>
           </button>
 
-          <!-- 4. เบอร์รี่ย่าง / ยาฟื้นฟู -->
-          <button id="craftSalveBtn" onclick="craftItem('salve')" class="game-btn bg-slate-800 hover:bg-slate-750 border border-slate-600 rounded-xl px-2.5 py-1.5 flex items-center gap-2 text-left">
-            <span class="text-xl">🍲</span>
+          <!-- [5] คบเพลิงพกพา -->
+          <button id="craftTorchBtn" onclick="craftItem('torch')" class="game-btn bg-slate-800/95 hover:bg-slate-700 border border-slate-600 rounded-xl px-2 py-1.5 flex items-center gap-1.5 text-left">
+            <span class="text-lg sm:text-xl">🔦</span>
             <div>
-              <div class="text-xs font-bold text-emerald-300 flex items-center gap-1">
+              <div class="text-[11px] sm:text-xs font-bold text-yellow-300 flex items-center gap-1">
+                <span>คบเพลิง</span>
+                <span class="hidden sm:inline text-[10px] bg-slate-700 text-sky-300 px-1 rounded">5</span>
+              </div>
+              <div id="torchCostText" class="text-[10px] text-slate-400">🪵2 🪨1</div>
+            </div>
+          </button>
+
+          <!-- [6] เบอร์รี่อุ่น -->
+          <button id="craftSalveBtn" onclick="craftItem('salve')" class="game-btn bg-slate-800/95 hover:bg-slate-700 border border-slate-600 rounded-xl px-2 py-1.5 flex items-center gap-1.5 text-left">
+            <span class="text-lg sm:text-xl">🍲</span>
+            <div>
+              <div class="text-[11px] sm:text-xs font-bold text-emerald-300 flex items-center gap-1">
                 <span>เบอร์รี่อุ่น</span>
-                <span class="hidden sm:inline text-[10px] bg-slate-700 text-sky-300 px-1.5 rounded">[4]</span>
+                <span class="hidden sm:inline text-[10px] bg-slate-700 text-sky-300 px-1 rounded">6</span>
               </div>
               <div class="text-[10px] text-slate-400">🍒2 🪵1</div>
             </div>
@@ -282,51 +307,55 @@
 
   <!-- ==================== หน้าจอเริ่มต้น (Start Screen) ==================== -->
   <div id="startScreen" class="fixed inset-0 z-30 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
-    <div class="glass-panel rounded-3xl max-w-lg w-full p-6 sm:p-8 text-center border-2 border-sky-500/30">
-      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-sky-500/20 border border-sky-400/40 text-4xl mb-3 shadow-inner">
+    <div class="glass-panel rounded-3xl max-w-xl w-full p-5 sm:p-7 text-center border-2 border-sky-500/35 max-h-[95vh] overflow-y-auto">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-sky-500/20 border border-sky-400/40 text-3xl mb-2">
         🏕️
       </div>
-      <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-wide mb-1">
-        เอาชีวิตรอดในป่าใหญ่
+      <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-wide">
+        เอาชีวิตรอดในป่าอาถรรพ์
       </h1>
-      <p class="text-sky-400 text-sm font-medium mb-5">WILDERNESS SURVIVAL 2D</p>
+      <p class="text-sky-400 text-xs sm:text-sm font-semibold mb-4">CUSTOM MONSTER EDITION • 2D SURVIVAL</p>
 
-      <div class="bg-slate-900/90 rounded-2xl p-4 text-left space-y-2.5 text-xs sm:text-sm text-slate-300 border border-slate-800 mb-6">
-        <div class="font-bold text-sky-300 text-sm mb-1">📌 คู่มือเอาตัวรอดเบื้องต้น:</div>
-        <div class="flex items-start gap-2">
-          <span>🌲</span>
-          <span><b>เก็บทรัพยากร:</b> เดินเข้าใกล้ต้นไม้ หิน พุ่มเบอร์รี่ หรือบ่อน้ำ แล้วกด <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-sky-300 border border-slate-600">E</kbd> (หรือปุ่มเก็บ/ดื่ม)</span>
+      <!-- ข้อมูลมอนสเตอร์ในเกม -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-left mb-4">
+        <div class="bg-slate-900/90 p-2.5 rounded-2xl border border-rose-500/30">
+          <div class="text-xs font-bold text-rose-400">🐺 หมาป่าเงา</div>
+          <p class="text-[11px] text-slate-400 mt-0.5">นักล่า 4 ขา ออกล่าตอนกลางคืน เคลื่อนที่ไวและพุ่งกัด</p>
         </div>
-        <div class="flex items-start gap-2">
-          <span>🏃</span>
-          <span><b>การเคลื่อนที่:</b> กด <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-sky-300 border border-slate-600">WASD</kbd> หรือปุ่มลูกศร (กด <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-emerald-300 border border-slate-600">Shift</kbd> เพื่อวิ่งไว)</span>
+        <div class="bg-slate-900/90 p-2.5 rounded-2xl border border-emerald-500/30">
+          <div class="text-xs font-bold text-emerald-400">🗿 โกเลมบึงมรณะ</div>
+          <p class="text-[11px] text-slate-400 mt-0.5">อสูรหินตะไคร่น้ำ อึดถึก ทุบพื้นสร้างคลื่นกระแทกวงกว้าง</p>
         </div>
-        <div class="flex items-start gap-2">
-          <span>⚔️</span>
-          <span><b>ต่อสู้:</b> คลิกซ้าย หรือกด <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-rose-300 border border-slate-600">Spacebar</kbd> เพื่อฟาดศัตรู (ระวังหมาป่าเงาตอนกลางคืน!)</span>
+        <div class="bg-slate-900/90 p-2.5 rounded-2xl border border-purple-500/40">
+          <div class="text-xs font-bold text-purple-400">👑 ราชันย์กวางอเวจี</div>
+          <p class="text-[11px] text-slate-400 mt-0.5">บอสเขายักษ์ 2 เฟส! โผล่คืนที่ 2 พุ่งชนความเร็วสูงและฟาดกรงเล็บ</p>
         </div>
-        <div class="flex items-start gap-2">
-          <span>🔥</span>
-          <span><b>คราฟต์ & กองไฟ:</b> กดปุ่ม <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-amber-300 border border-slate-600">1 - 4</kbd> หรือคลิกแถบด้านล่าง สร้าง <b>กองไฟ</b> เพื่อส่องสว่าง ฟื้นฟูเลือด และขับไล่มอนสเตอร์</span>
-        </div>
+      </div>
+
+      <div class="bg-slate-900/90 rounded-2xl p-3.5 text-left space-y-1.5 text-xs text-slate-300 border border-slate-800 mb-5">
+        <div>🎮 <b>เดิน & วิ่ง:</b> กด <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-sky-300 border border-slate-700">WASD</kbd> หรือลูกศร (<kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-emerald-300 border border-slate-700">Shift</kbd> วิ่งไว)</div>
+        <div>✋ <b>เก็บของ / ดื่มน้ำ:</b> เข้าใกล้ต้นไม้ หิน พุ่มเบอร์รี่ หรือบ่อน้ำ แล้วกด <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-amber-300 border border-slate-700">E</kbd></div>
+        <div>⚔️ <b>โจมตี:</b> คลิกซ้ายตามทิศเมาส์ หรือกด <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-rose-300 border border-slate-700">Spacebar</kbd></div>
+        <div>🛠️ <b>คราฟต์ด่วน:</b> กดปุ่ม <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-sky-300 border border-slate-700">1 - 6</kbd> เพื่อสร้างอาวุธ กองไฟ กำแพง และคบเพลิง</div>
       </div>
 
       <button id="startGameBtn" class="game-btn w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-lg shadow-lg shadow-sky-500/25">
-        🚀 เริ่มออกผจญภัย
+        ⚔️ เข้าสู่ป่าอาถรรพ์
       </button>
     </div>
   </div>
 
-  <!-- ==================== หน้าจอหยุดชั่วคราว / วิธีเล่น (Pause Modal) ==================== -->
+  <!-- ==================== หน้าจอหยุดชั่วคราว / คู่มือ (Pause Modal) ==================== -->
   <div id="pauseModal" class="hidden fixed inset-0 z-30 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
     <div class="glass-panel rounded-3xl max-w-md w-full p-6 text-center">
-      <h2 class="text-2xl font-bold text-sky-400 mb-3">⏸️ พักชั่วคราว & ข้อมูลไอเทม</h2>
-      <div class="bg-slate-900/90 rounded-2xl p-4 text-left space-y-2.5 text-xs sm:text-sm text-slate-300 border border-slate-800 mb-5">
-        <p>🪓 <b>ขวานหิน (🪵3 🪨2):</b> เพิ่มพลังโจมตีเป็น 35 และเก็บไม้/หินได้ไวขึ้น 2 เท่า</p>
-        <p>🔥 <b>กองไฟ (🪵5 🪨3):</b> ให้แสงสว่างตอนกลางคืน ฟื้นฟู HP อัตโนมัติเมื่อยืนใกล้ และทำให้มอนสเตอร์เดินช้าลง</p>
-        <p>🧱 <b>กำแพงไม้ (🪵4):</b> วางขวางทางเดินของมอนสเตอร์เพื่อป้องกันฐาน</p>
-        <p>🍲 <b>เบอร์รี่อุ่น (🍒2 🪵1):</b> ฟื้นฟู HP +35 และความอิ่ม +40 ทันที</p>
-        <p>💧 <b>บ่อน้ำสีฟ้า:</b> เดินไปริมบ่อแล้วกด E เพื่อดื่มน้ำให้เต็ม 100%</p>
+      <h2 class="text-xl sm:text-2xl font-bold text-sky-400 mb-3">📖 คู่มือการคราฟต์ & สารานุกรม</h2>
+      <div class="bg-slate-900/90 rounded-2xl p-4 text-left space-y-2 text-xs sm:text-sm text-slate-300 border border-slate-800 mb-5 max-h-72 overflow-y-auto">
+        <p>🔱 <b>หอกไม้ (🪵4):</b> เพิ่มระยะโจมตีไกลขึ้น และทำดาเมจ 26</p>
+        <p>🪓 <b>ขวานหิน (🪵4 🪨3):</b> อาวุธหนักทำดาเมจ 38 และเก็บไม้/หินไวขึ้น 2 เท่า</p>
+        <p>🔥 <b>กองไฟ (🪵5 🪨3):</b> ให้แสงสว่างวงกว้าง ฟื้นฟูเลือดอัตโนมัติ และลดความเร็วมอนสเตอร์</p>
+        <p>🧱 <b>กำแพงไม้ (🪵4):</b> วางขวางทางเดินและหยุดการพุ่งชนของมอนสเตอร์</p>
+        <p>🔦 <b>คบเพลิง (🪵2 🪨1):</b> เปิดแสงสว่างรอบตัวผู้เล่นนาน 90 วินาที</p>
+        <p>🍲 <b>เบอร์รี่อุ่น (🍒2 🪵1):</b> ฟื้นฟู HP +40 และความอิ่ม +45 ทันที</p>
       </div>
       <div class="flex gap-3">
         <button id="resumeBtn" class="game-btn flex-1 py-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold">
@@ -342,17 +371,17 @@
   <!-- ==================== หน้าจอจบเกม (Game Over Screen) ==================== -->
   <div id="gameOverScreen" class="hidden fixed inset-0 z-30 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
     <div class="glass-panel rounded-3xl max-w-md w-full p-6 sm:p-8 text-center border-2 border-rose-500/40">
-      <div class="text-5xl mb-3">💀</div>
-      <h2 class="text-2xl sm:text-3xl font-bold text-rose-400 mb-1">คุณไม่รอดชีวิต!</h2>
-      <p id="deathReasonText" class="text-slate-400 text-sm mb-5">พ่ายแพ้ต่อความโหดร้ายของป่าใหญ่</p>
+      <div class="text-5xl mb-2">💀</div>
+      <h2 class="text-2xl sm:text-3xl font-bold text-rose-400 mb-1">การเดินทางสิ้นสุดลง!</h2>
+      <p id="deathReasonText" class="text-slate-400 text-sm mb-5">พ่ายแพ้ต่อความโหดร้ายของป่าอาถรรพ์</p>
 
-      <div class="bg-slate-900/90 rounded-2xl p-4 space-y-2.5 text-sm border border-slate-800 mb-6">
+      <div class="bg-slate-900/90 rounded-2xl p-4 space-y-2 text-sm border border-slate-800 mb-6">
         <div class="flex justify-between">
           <span class="text-slate-400">⏳ เอาชีวิตรอดได้:</span>
           <span id="finalDays" class="font-bold text-sky-400">1 วัน</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-slate-400">🐺 กำจัดศัตรู:</span>
+          <span class="text-slate-400">⚔️ กำจัดมอนสเตอร์:</span>
           <span id="finalKills" class="font-bold text-rose-400">0 ตัว</span>
         </div>
         <div class="flex justify-between">
@@ -362,7 +391,7 @@
       </div>
 
       <button id="playAgainBtn" class="game-btn w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-lg shadow-lg">
-        🔄 เล่นใหม่อีกครั้ง
+        🔄 เริ่มต้นเอาชีวิตรอดใหม่
       </button>
     </div>
   </div>
@@ -370,10 +399,10 @@
   <script>
     /**
      * ============================================================================
-     * ระบบเสียงสังเคราะห์ (Web Audio API) - ไม่ต้องพึ่งพาไฟล์เสียงภายนอก
+     * 1. ระบบเสียงสังเคราะห์ (Web Audio API Sound Synthesizer)
      * ============================================================================
      */
-    class SoundSystem {
+    class SoundEngine {
       constructor() {
         this.ctx = null;
         this.muted = false;
@@ -381,15 +410,15 @@
 
       init() {
         if (!this.ctx) {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          this.ctx = new AudioContext();
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
         }
         if (this.ctx.state === 'suspended') {
           this.ctx.resume();
         }
       }
 
-      playTone(freq, type, duration, vol = 0.15, slideFreq = null) {
+      playTone(freq, type, duration, vol = 0.14, endFreq = null) {
         if (this.muted) return;
         try {
           this.init();
@@ -397,8 +426,8 @@
           const gain = this.ctx.createGain();
           osc.type = type;
           osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-          if (slideFreq) {
-            osc.frequency.exponentialRampToValueAtTime(slideFreq, this.ctx.currentTime + duration);
+          if (endFreq) {
+            osc.frequency.exponentialRampToValueAtTime(endFreq, this.ctx.currentTime + duration);
           }
           gain.gain.setValueAtTime(vol, this.ctx.currentTime);
           gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
@@ -406,140 +435,126 @@
           gain.connect(this.ctx.destination);
           osc.start();
           osc.stop(this.ctx.currentTime + duration);
-        } catch (e) {
-          // ข้ามข้อผิดพลาดหากเบราว์เซอร์บล็อกเสียงก่อนคลิก
-        }
+        } catch (e) {}
       }
 
-      chop() { this.playTone(160, 'triangle', 0.12, 0.2, 70); }
-      mine() { this.playTone(520, 'square', 0.09, 0.12, 220); }
-      pickBerry() { this.playTone(440, 'sine', 0.1, 0.15, 660); }
-      drink() { this.playTone(300, 'sine', 0.22, 0.18, 550); }
-      swing() { this.playTone(260, 'sawtooth', 0.12, 0.12, 90); }
-      hitEnemy() { this.playTone(140, 'square', 0.15, 0.2, 55); }
-      hurt() { this.playTone(130, 'sawtooth', 0.28, 0.25, 45); }
+      chop() { this.playTone(155, 'triangle', 0.12, 0.2, 65); }
+      mine() { this.playTone(540, 'square', 0.09, 0.12, 210); }
+      berry() { this.playTone(460, 'sine', 0.1, 0.14, 680); }
+      drink() { this.playTone(280, 'sine', 0.24, 0.16, 540); }
+      swing() { this.playTone(270, 'sawtooth', 0.11, 0.12, 85); }
+      hitMonster() { this.playTone(135, 'square', 0.14, 0.2, 50); }
+      playerHurt() { this.playTone(120, 'sawtooth', 0.3, 0.25, 42); }
+      growl() { this.playTone(95, 'sawtooth', 0.35, 0.16, 48); }
+      slam() { this.playTone(75, 'triangle', 0.45, 0.28, 28); }
+      bossRoar() {
+        this.playTone(110, 'sawtooth', 0.55, 0.22, 38);
+        setTimeout(() => this.playTone(85, 'square', 0.45, 0.18, 32), 120);
+      }
       craft() {
         this.playTone(420, 'triangle', 0.1, 0.15, 580);
-        setTimeout(() => this.playTone(620, 'triangle', 0.15, 0.15, 840), 90);
+        setTimeout(() => this.playTone(640, 'triangle', 0.15, 0.15, 860), 85);
       }
       eat() {
-        this.playTone(340, 'sine', 0.08, 0.15, 480);
-        setTimeout(() => this.playTone(460, 'sine', 0.12, 0.15, 620), 80);
+        this.playTone(350, 'sine', 0.08, 0.15, 500);
+        setTimeout(() => this.playTone(480, 'sine', 0.12, 0.15, 640), 80);
       }
     }
 
-    const sfx = new SoundSystem();
+    const sfx = new SoundEngine();
 
     /**
      * ============================================================================
-     * ตัวแปรหลักและการตั้งค่าโลกของเกม (World & State)
+     * 2. ตัวแปรโลกของเกมและสถานะหลัก (World & Game State)
      * ============================================================================
      */
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    const minimapCanvas = document.getElementById('minimapCanvas');
+    const mctx = minimapCanvas.getContext('2d');
 
-    // ขนาดโลกจำลอง (ใหญ่กว่าหน้าจอ เพื่อให้เดินสำรวจได้จริง)
-    const WORLD_WIDTH = 2400;
-    const WORLD_HEIGHT = 2400;
+    const WORLD_WIDTH = 2600;
+    const WORLD_HEIGHT = 2600;
+    const DAY_LENGTH = 80; // 1 วัน = 80 วินาที (0-48 กลางวัน, 48-80 กลางคืน)
 
-    // สถานะเกม
-    let gameState = 'START'; // 'START', 'PLAYING', 'PAUSED', 'GAMEOVER'
+    let gameState = 'START';
     let lastTime = 0;
-    let toastTimeout = null;
+    let toastTimer = null;
+    let screenShake = 0;
 
-    // กล้องติดตามผู้เล่น
     const camera = { x: 0, y: 0 };
 
-    // ระบบกลางวัน-กลางคืน (1 วัน = 75 วินาที)
-    const DAY_LENGTH = 75;
-    let worldTime = 12; // เริ่มช่วงเช้าสายๆ
+    let worldTime = 12;
     let daysSurvived = 1;
     let isNight = false;
+    let bossSpawnedTonight = false;
 
-    // ข้อมูลผู้เล่น
     let player = {};
     let inventory = { wood: 0, stone: 0, berry: 0 };
     let stats = { kills: 0, gathered: 0, deathReason: '' };
 
-    // ออบเจกต์ในฉาก
     let ponds = [];
-    let resources = []; // ต้นไม้, หิน, พุ่มเบอร์รี่
-    let structures = []; // กองไฟ, กำแพงไม้
-    let enemies = []; // หมาป่าเงาตอนกลางคืน
-    let particles = []; // เอฟเฟกต์เศษไม้ ประกายไฟ เลือด
-    let floatingTexts = []; // ตัวเลขดาเมจและข้อความลอย (+1 ไม้)
+    let grassTufts = [];
+    let resources = [];
+    let structures = [];
+    let monsters = [];
+    let shockwaves = [];
+    let particles = [];
+    let floatingTexts = [];
 
-    // อินพุตจากคีย์บอร์ด เมาส์ และหน้าจอสัมผัส
+    // อินพุต
     const keys = {};
-    const touchDirs = { up: false, down: false, left: false, right: false };
+    const joystick = { active: false, dx: 0, dy: 0 };
     let touchSprinting = false;
-    let mousePos = { x: 0, y: 0 };
+    let usingMouseAim = false;
 
-    /**
-     * แสดงข้อความแจ้งเตือนสั้นๆ ด้านบนหน้าจอ
-     */
     function showToast(msg) {
       const el = document.getElementById('toastMessage');
       el.textContent = msg;
       el.style.opacity = '1';
-      clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(() => {
-        el.style.opacity = '0';
-      }, 2200);
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.style.opacity = '0'; }, 2400);
     }
 
-    /**
-     * สร้างข้อความลอยในฉาก (เช่น +1 🪵, -20)
-     */
     function spawnFloatingText(x, y, text, color = '#ffffff') {
-      floatingTexts.push({
-        x,
-        y,
-        text,
-        color,
-        life: 1.0,
-        vy: -35
-      });
+      floatingTexts.push({ x, y, text, color, life: 1.05, vy: -36 });
     }
 
-    /**
-     * สร้างเอฟเฟกต์อนุภาค (Particles)
-     */
-    function spawnParticles(x, y, color, count = 6) {
+    function spawnParticles(x, y, color, count = 6, speedMax = 110) {
       for (let i = 0; i < count; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const speed = 40 + Math.random() * 90;
+        const speed = 35 + Math.random() * speedMax;
         particles.push({
-          x,
-          y,
+          x, y,
           vx: Math.cos(angle) * speed,
           vy: Math.sin(angle) * speed,
-          size: 3 + Math.random() * 4,
+          size: 2.5 + Math.random() * 4.5,
           color,
-          life: 0.35 + Math.random() * 0.25
+          life: 0.35 + Math.random() * 0.3
         });
       }
     }
 
     /**
      * ============================================================================
-     * การเริ่มต้นและสร้างแผนที่ใหม่ (Reset & World Generation)
+     * 3. การสร้างโลกและทรัพยากร (World Initialization)
      * ============================================================================
      */
     function initGame() {
-      // รีเซ็ตผู้เล่นไว้กลางแผนที่
       player = {
         x: WORLD_WIDTH / 2,
         y: WORLD_HEIGHT / 2,
-        radius: 18,
-        speed: 195,
+        radius: 19,
+        speed: 205,
         hp: 100,
         maxHp: 100,
         hunger: 100,
         thirst: 100,
         stamina: 100,
-        hasAxe: false,
+        weapon: 'fist', // 'fist', 'spear', 'axe'
+        torchTimer: 0,
         facingAngle: 0,
+        walkCycle: 0,
         attackTimer: 0,
         attackCooldown: 0,
         invulnTimer: 0
@@ -550,75 +565,72 @@
       worldTime = 10;
       daysSurvived = 1;
       isNight = false;
+      bossSpawnedTonight = false;
+      screenShake = 0;
 
       ponds = [];
+      grassTufts = [];
       resources = [];
       structures = [];
-      enemies = [];
+      monsters = [];
+      shockwaves = [];
       particles = [];
       floatingTexts = [];
 
-      // 1. สร้างบ่อน้ำ 5 แห่ง (มี 1 บ่ออยู่ไม่ไกลจากจุดเกิด)
-      ponds.push({ x: player.x + 220, y: player.y - 140, radius: 75 });
-      for (let i = 0; i < 4; i++) {
-        ponds.push({
-          x: 250 + Math.random() * (WORLD_WIDTH - 500),
-          y: 250 + Math.random() * (WORLD_HEIGHT - 500),
-          radius: 70 + Math.random() * 45
+      // สุ่มกอหญ้าตกแต่งพื้นแผนที่
+      for (let i = 0; i < 240; i++) {
+        grassTufts.push({
+          x: Math.random() * WORLD_WIDTH,
+          y: Math.random() * WORLD_HEIGHT,
+          scale: 0.7 + Math.random() * 0.7,
+          swayOffset: Math.random() * Math.PI * 2
         });
       }
 
-      // 2. สร้างทรัพยากร (ต้นไม้ 55 ต้น, หิน 35 ก้อน, พุ่มเบอร์รี่ 30 พุ่ม)
-      spawnResources('tree', 55);
-      spawnResources('rock', 35);
-      spawnResources('berry', 30);
+      // สร้างบ่อน้ำ 5 แห่ง
+      ponds.push({ x: player.x + 240, y: player.y - 150, radius: 80 });
+      for (let i = 0; i < 4; i++) {
+        ponds.push({
+          x: 260 + Math.random() * (WORLD_WIDTH - 520),
+          y: 260 + Math.random() * (WORLD_HEIGHT - 520),
+          radius: 75 + Math.random() * 45
+        });
+      }
+
+      // สร้างทรัพยากร
+      spawnResources('tree', 60);
+      spawnResources('rock', 38);
+      spawnResources('berry', 34);
 
       updateHUD();
     }
 
-    /**
-     * สุ่มวางทรัพยากรโดยไม่ให้ทับจุดเกิดผู้เล่นหรือบ่อน้ำ
-     */
     function spawnResources(type, count) {
       let placed = 0;
       let attempts = 0;
-      while (placed < count && attempts < count * 15) {
+      while (placed < count && attempts < count * 18) {
         attempts++;
-        const x = 100 + Math.random() * (WORLD_WIDTH - 200);
-        const y = 100 + Math.random() * (WORLD_HEIGHT - 200);
+        const x = 110 + Math.random() * (WORLD_WIDTH - 220);
+        const y = 110 + Math.random() * (WORLD_HEIGHT - 220);
 
-        // ห้ามเกิดทับตัวผู้เล่นระยะใกล้
-        if (Math.hypot(x - player.x, y - player.y) < 120) continue;
+        if (Math.hypot(x - player.x, y - player.y) < 130) continue;
 
-        // ห้ามเกิดในบ่อน้ำ
-        let inWater = false;
+        let badSpot = false;
         for (const p of ponds) {
-          if (Math.hypot(x - p.x, y - p.y) < p.radius + 35) {
-            inWater = true;
-            break;
-          }
+          if (Math.hypot(x - p.x, y - p.y) < p.radius + 42) { badSpot = true; break; }
         }
-        if (inWater) continue;
+        if (badSpot) continue;
 
-        // ห้ามเกิดซ้อนทรัพยากรอื่น
-        let overlap = false;
         for (const r of resources) {
-          if (Math.hypot(x - r.x, y - r.y) < 55) {
-            overlap = true;
-            break;
-          }
+          if (Math.hypot(x - r.x, y - r.y) < 58) { badSpot = true; break; }
         }
-        if (overlap) continue;
+        if (badSpot) continue;
 
         const maxHp = type === 'tree' ? 4 : type === 'rock' ? 5 : 2;
-        const radius = type === 'tree' ? 26 : type === 'rock' ? 22 : 18;
+        const radius = type === 'tree' ? 28 : type === 'rock' ? 23 : 18;
         resources.push({
-          type,
-          x,
-          y,
-          radius,
-          hp: maxHp,
-          maxHp,
+          type, x, y, radius,
+          hp: maxHp, maxHp,
           depleted: false,
           respawnTimer: 0,
           shakeTimer: 0
@@ -629,88 +641,152 @@
 
     /**
      * ============================================================================
-     * ระบบเก็บเกี่ยว คราฟต์ และต่อสู้ (Player Actions)
+     * 4. ระบบออกแบบและเกิดมอนสเตอร์ทั้ง 3 สายพันธุ์ (Monster Factory)
      * ============================================================================
      */
+    function spawnMonster(type, x, y) {
+      if (type === 'wolf') {
+        monsters.push({
+          type: 'wolf',
+          name: 'หมาป่าเงา',
+          x, y,
+          radius: 20,
+          hp: 55 + (daysSurvived - 1) * 12,
+          maxHp: 55 + (daysSurvived - 1) * 12,
+          speed: 145 + Math.min(45, daysSurvived * 6),
+          damage: 14 + Math.min(10, daysSurvived * 2),
+          state: 'CHASE', // 'CHASE', 'TELEGRAPH', 'LUNGE', 'COOLDOWN'
+          stateTimer: 0,
+          lungeVx: 0,
+          lungeVy: 0,
+          facingAngle: 0,
+          animCycle: Math.random() * 10,
+          hitFlash: 0,
+          attackCooldown: 0
+        });
+      } else if (type === 'golem') {
+        monsters.push({
+          type: 'golem',
+          name: 'โกเลมบึงมรณะ',
+          x, y,
+          radius: 30,
+          hp: 150 + (daysSurvived - 1) * 25,
+          maxHp: 150 + (daysSurvived - 1) * 25,
+          speed: 78 + Math.min(20, daysSurvived * 3),
+          damage: 24 + Math.min(12, daysSurvived * 2),
+          state: 'CHASE', // 'CHASE', 'TELEGRAPH', 'COOLDOWN'
+          stateTimer: 0,
+          facingAngle: 0,
+          animCycle: Math.random() * 10,
+          hitFlash: 0,
+          attackCooldown: 0
+        });
+      } else if (type === 'boss') {
+        const maxHp = 450 + Math.max(0, daysSurvived - 2) * 120;
+        monsters.push({
+          type: 'boss',
+          name: 'ราชันย์กวางอเวจี',
+          x, y,
+          radius: 38,
+          hp: maxHp,
+          maxHp: maxHp,
+          phase: 1,
+          speed: 118,
+          damage: 26,
+          state: 'CHASE', // 'CHASE', 'TELEGRAPH_DASH', 'DASH', 'TELEGRAPH_NOVA', 'COOLDOWN'
+          stateTimer: 0,
+          dashVx: 0,
+          dashVy: 0,
+          facingAngle: 0,
+          animCycle: 0,
+          hitFlash: 0,
+          attackCooldown: 1.5
+        });
+        sfx.bossRoar();
+        screenShake = 0.45;
+        showToast('👑 คำเตือน: "ราชันย์กวางอเวจี" ปรากฏตัวในความมืดแล้ว!');
+      }
+    }
+
+    /**
+     * ============================================================================
+     * 5. การกระทำของผู้เล่น (เก็บเกี่ยว, โจมตี, คราฟต์)
+     * ============================================================================
+     */
+    function getWeaponStats() {
+      if (player.weapon === 'axe') return { damage: 38, reach: 78, cooldown: 0.36, label: '🪓 ขวานหิน (38)' };
+      if (player.weapon === 'spear') return { damage: 26, reach: 102, cooldown: 0.30, label: '🔱 หอกไม้ (26)' };
+      return { damage: 16, reach: 62, cooldown: 0.32, label: '✊ มือเปล่า (16)' };
+    }
+
     function handleInteract() {
       if (gameState !== 'PLAYING') return;
 
-      // 1. เช็กว่าอยู่ใกล้บ่อน้ำเพื่อดื่มน้ำหรือไม่
+      // 1. ดื่มน้ำจากบ่อน้ำ
       for (const pond of ponds) {
-        const dist = Math.hypot(player.x - pond.x, player.y - pond.y);
-        if (dist <= pond.radius + player.radius + 28) {
+        if (Math.hypot(player.x - pond.x, player.y - pond.y) <= pond.radius + player.radius + 30) {
           if (player.thirst >= 98) {
             showToast('💧 น้ำดื่มเต็มอยู่แล้ว');
           } else {
-            player.thirst = Math.min(100, player.thirst + 45);
+            player.thirst = Math.min(100, player.thirst + 48);
             sfx.drink();
-            spawnParticles(player.x, player.y, '#38bdf8', 8);
-            spawnFloatingText(player.x, player.y - 25, '+45 💧 น้ำดื่ม', '#38bdf8');
+            spawnParticles(player.x, player.y, '#38bdf8', 9);
+            spawnFloatingText(player.x, player.y - 26, '+48 💧 น้ำดื่ม', '#38bdf8');
             updateHUD();
           }
           return;
         }
       }
 
-      // 2. เช็กทรัพยากรที่อยู่ใกล้ที่สุดในระยะเก็บเกี่ยว
+      // 2. เก็บทรัพยากรใกล้ตัว
       let closest = null;
-      let minDist = 72;
+      let minDist = 76;
       for (const res of resources) {
         if (res.depleted) continue;
         const d = Math.hypot(player.x - res.x, player.y - res.y);
-        if (d < minDist) {
-          minDist = d;
-          closest = res;
-        }
+        if (d < minDist) { minDist = d; closest = res; }
       }
 
       if (closest) {
-        // หันหน้าไปหาทรัพยากร
         player.facingAngle = Math.atan2(closest.y - player.y, closest.x - player.x);
-        player.attackTimer = 0.18;
-        closest.shakeTimer = 0.2;
+        player.attackTimer = 0.2;
+        closest.shakeTimer = 0.22;
 
-        // ขวานหินช่วยเก็บไม้และหินได้แรงขึ้น 2 เท่า
-        const power = (player.hasAxe && (closest.type === 'tree' || closest.type === 'rock')) ? 2 : 1;
+        const power = (player.weapon === 'axe' && (closest.type === 'tree' || closest.type === 'rock')) ? 2 : 1;
         closest.hp -= power;
 
         if (closest.type === 'tree') {
           sfx.chop();
-          spawnParticles(closest.x, closest.y, '#a16207', 6);
+          spawnParticles(closest.x, closest.y, '#a16207', 7);
           if (closest.hp <= 0) {
-            const gain = player.hasAxe ? 3 : 2;
+            const gain = player.weapon === 'axe' ? 3 : 2;
             inventory.wood += gain;
             stats.gathered += gain;
             closest.depleted = true;
-            closest.respawnTimer = 35; // เกิดใหม่ใน 35 วินาที
-            spawnFloatingText(closest.x, closest.y - 20, `+${gain} 🪵 ไม้`, '#fcd34d');
-          } else {
-            spawnFloatingText(closest.x, closest.y - 15, 'ปัง!', '#d97706');
+            closest.respawnTimer = 34;
+            spawnFloatingText(closest.x, closest.y - 22, `+${gain} 🪵 ไม้`, '#fcd34d');
           }
         } else if (closest.type === 'rock') {
           sfx.mine();
-          spawnParticles(closest.x, closest.y, '#94a3b8', 6);
+          spawnParticles(closest.x, closest.y, '#94a3b8', 7);
           if (closest.hp <= 0) {
-            const gain = player.hasAxe ? 3 : 2;
+            const gain = player.weapon === 'axe' ? 3 : 2;
             inventory.stone += gain;
             stats.gathered += gain;
             closest.depleted = true;
-            closest.respawnTimer = 45;
-            spawnFloatingText(closest.x, closest.y - 20, `+${gain} 🪨 หิน`, '#cbd5e1');
-          } else {
-            spawnFloatingText(closest.x, closest.y - 15, 'แกร๊ง!', '#94a3b8');
+            closest.respawnTimer = 42;
+            spawnFloatingText(closest.x, closest.y - 22, `+${gain} 🪨 หิน`, '#cbd5e1');
           }
         } else if (closest.type === 'berry') {
-          sfx.pickBerry();
-          spawnParticles(closest.x, closest.y, '#f43f5e', 5);
+          sfx.berry();
+          spawnParticles(closest.x, closest.y, '#f43f5e', 6);
           if (closest.hp <= 0) {
             inventory.berry += 2;
             stats.gathered += 2;
-            // กินเบอร์รี่สดได้ทันทีบางส่วนหรือเก็บเข้ากระเป๋า
             player.hunger = Math.min(100, player.hunger + 10);
             closest.depleted = true;
-            closest.respawnTimer = 25;
-            spawnFloatingText(closest.x, closest.y - 20, '+2 🍒 เบอร์รี่ (+10 อิ่ม)', '#fb7185');
+            closest.respawnTimer = 24;
+            spawnFloatingText(closest.x, closest.y - 22, '+2 🍒 เบอร์รี่ (+10 อิ่ม)', '#fb7185');
           }
         }
         updateHUD();
@@ -719,126 +795,155 @@
       }
     }
 
-    /**
-     * การโจมตีศัตรู (Spacebar / คลิกซ้าย / ปุ่มโจมตี)
-     */
     function handleAttack() {
       if (gameState !== 'PLAYING' || player.attackCooldown > 0) return;
 
+      const wStats = getWeaponStats();
       player.attackTimer = 0.22;
-      player.attackCooldown = 0.35;
+      player.attackCooldown = wStats.cooldown;
       sfx.swing();
 
-      const damage = player.hasAxe ? 35 : 15;
-      const reach = player.hasAxe ? 78 : 62;
       let hitAny = false;
+      for (let i = monsters.length - 1; i >= 0; i--) {
+        const m = monsters[i];
+        const dist = Math.hypot(m.x - player.x, m.y - player.y);
+        if (dist <= wStats.reach + m.radius) {
+          m.hp -= wStats.damage;
+          m.hitFlash = 0.16;
 
-      for (let i = enemies.length - 1; i >= 0; i--) {
-        const enemy = enemies[i];
-        const dist = Math.hypot(enemy.x - player.x, enemy.y - player.y);
-        if (dist <= reach + enemy.radius) {
-          // เช็กทิศทางคร่าวๆ (หรือให้ตีโดนรอบตัวในระยะประชิดเพื่อความลื่นไหลบนมือถือ)
-          enemy.hp -= damage;
-          enemy.hitFlash = 0.15;
-          // ผลักศัตรูกระเด็นถอยหลัง
-          const pushAngle = Math.atan2(enemy.y - player.y, enemy.x - player.x);
-          enemy.x += Math.cos(pushAngle) * 28;
-          enemy.y += Math.sin(pushAngle) * 28;
+          // ผลักถอยหลัง (บอสและโกเลมต้านทานแรงผลักได้ดีกว่า)
+          const knockback = m.type === 'boss' ? 8 : m.type === 'golem' ? 14 : 32;
+          const pushAngle = Math.atan2(m.y - player.y, m.x - player.x);
+          m.x += Math.cos(pushAngle) * knockback;
+          m.y += Math.sin(pushAngle) * knockback;
 
-          spawnParticles(enemy.x, enemy.y, '#ef4444', 8);
-          spawnFloatingText(enemy.x, enemy.y - 20, `-${damage}`, '#f87171');
+          spawnParticles(m.x, m.y, m.type === 'boss' ? '#c084fc' : '#ef4444', 9);
+          spawnFloatingText(m.x, m.y - m.radius - 10, `-${wStats.damage}`, '#f87171');
           hitAny = true;
 
-          if (enemy.hp <= 0) {
-            enemies.splice(i, 1);
+          if (m.hp <= 0) {
+            monsters.splice(i, 1);
             stats.kills++;
-            // ดรอปเบอร์รี่หรืออาหารเล็กน้อยเมื่อกำจัดศัตรู
-            inventory.berry += 1;
-            spawnFloatingText(enemy.x, enemy.y - 35, 'กำจัดสำเร็จ! +1 🍒', '#38bdf8');
+            if (m.type === 'boss') {
+              inventory.wood += 8;
+              inventory.stone += 8;
+              inventory.berry += 6;
+              player.hp = player.maxHp;
+              screenShake = 0.5;
+              spawnParticles(m.x, m.y, '#c084fc', 28, 180);
+              spawnFloatingText(m.x, m.y - 30, '👑 พิชิตบอสสำเร็จ! ฟื้นฟูเต็ม 100%', '#e879f9');
+              showToast('🎉 ยอดเยี่ยม! คุณโค่นราชันย์กวางอเวจีได้สำเร็จ!');
+            } else if (m.type === 'golem') {
+              inventory.stone += 4;
+              inventory.berry += 2;
+              spawnFloatingText(m.x, m.y - 25, '+4 🪨  +2 🍒', '#38bdf8');
+            } else {
+              inventory.berry += 1;
+              spawnFloatingText(m.x, m.y - 25, '+1 🍒', '#fb7185');
+            }
           }
         }
       }
 
       if (hitAny) {
-        sfx.hitEnemy();
+        sfx.hitMonster();
         updateHUD();
       }
     }
 
-    /**
-     * ระบบคราฟต์และใช้งานไอเทม (1-4)
-     */
-    window.craftItem = function(itemType) {
+    window.craftItem = function(type) {
       if (gameState !== 'PLAYING') return;
 
-      if (itemType === 'axe') {
-        if (player.hasAxe) {
-          showToast('🪓 คุณมีขวานหินอยู่แล้ว!');
+      if (type === 'spear') {
+        if (player.weapon === 'spear' || player.weapon === 'axe') {
+          showToast('คุณมีอาวุธระดับนี้หรือสูงกว่าแล้ว');
           return;
         }
-        if (inventory.wood >= 3 && inventory.stone >= 2) {
-          inventory.wood -= 3;
-          inventory.stone -= 2;
-          player.hasAxe = true;
+        if (inventory.wood >= 4) {
+          inventory.wood -= 4;
+          player.weapon = 'spear';
           sfx.craft();
           spawnParticles(player.x, player.y, '#38bdf8', 12);
-          showToast('🪓 คราฟต์ขวานหินสำเร็จ! ตีแรงขึ้น & เก็บไวขึ้น');
+          showToast('🔱 คราฟต์หอกไม้สำเร็จ! โจมตีระยะไกลขึ้น');
         } else {
-          showToast('⚠️ ทรัพยากรไม่พอ (ต้องการ 🪵3 และ 🪨2)');
+          showToast('⚠️ ต้องการ 🪵4 สำหรับสร้างหอกไม้');
         }
-      } else if (itemType === 'campfire') {
+      } else if (type === 'axe') {
+        if (player.weapon === 'axe') {
+          showToast('🪓 คุณถือขวานหินอยู่แล้ว!');
+          return;
+        }
+        if (inventory.wood >= 4 && inventory.stone >= 3) {
+          inventory.wood -= 4;
+          inventory.stone -= 3;
+          player.weapon = 'axe';
+          sfx.craft();
+          spawnParticles(player.x, player.y, '#38bdf8', 14);
+          showToast('🪓 คราฟต์ขวานหินสำเร็จ! ตีแรง 38 และฟาร์มไว 2 เท่า');
+        } else {
+          showToast('⚠️ ต้องการ 🪵4 และ 🪨3 สำหรับสร้างขวานหิน');
+        }
+      } else if (type === 'campfire') {
         if (inventory.wood >= 5 && inventory.stone >= 3) {
           inventory.wood -= 5;
           inventory.stone -= 3;
-          // วางกองไฟด้านหน้าผู้เล่นเล็กน้อย
-          const fx = player.x + Math.cos(player.facingAngle) * 42;
-          const fy = player.y + Math.sin(player.facingAngle) * 42;
+          const fx = player.x + Math.cos(player.facingAngle) * 46;
+          const fy = player.y + Math.sin(player.facingAngle) * 46;
           structures.push({
             type: 'campfire',
-            x: fx,
-            y: fy,
+            x: fx, y: fy,
             radius: 20,
-            lightRadius: 230,
-            life: 90, // อยู่ได้ 90 วินาที
-            maxLife: 90
+            lightRadius: 250,
+            life: 95,
+            maxLife: 95
           });
           sfx.craft();
-          spawnParticles(fx, fy, '#fb923c', 14);
-          showToast('🔥 จุดกองไฟสำเร็จ! ช่วยฟื้นฟูเลือดและกันความมืด');
+          spawnParticles(fx, fy, '#fb923c', 15);
+          showToast('🔥 จุดกองไฟสำเร็จ! ส่องสว่าง ฟื้นฟูเลือด และชะลอศัตรู');
         } else {
-          showToast('⚠️ ทรัพยากรไม่พอ (ต้องการ 🪵5 และ 🪨3)');
+          showToast('⚠️ ต้องการ 🪵5 และ 🪨3 สำหรับจุดกองไฟ');
         }
-      } else if (itemType === 'wall') {
+      } else if (type === 'wall') {
         if (inventory.wood >= 4) {
           inventory.wood -= 4;
-          const wx = player.x + Math.cos(player.facingAngle) * 48;
-          const wy = player.y + Math.sin(player.facingAngle) * 48;
+          const wx = player.x + Math.cos(player.facingAngle) * 52;
+          const wy = player.y + Math.sin(player.facingAngle) * 52;
           structures.push({
             type: 'wall',
-            x: wx,
-            y: wy,
-            radius: 24,
-            hp: 120,
-            maxHp: 120
+            x: wx, y: wy,
+            radius: 25,
+            hp: 150,
+            maxHp: 150
           });
           sfx.craft();
           spawnParticles(wx, wy, '#d97706', 10);
-          showToast('🧱 สร้างกำแพงไม้ป้องกันศัตรูสำเร็จ!');
+          showToast('🧱 สร้างกำแพงไม้ป้องกันมอนสเตอร์สำเร็จ!');
         } else {
-          showToast('⚠️ ทรัพยากรไม่พอ (ต้องการ 🪵4)');
+          showToast('⚠️ ต้องการ 🪵4 สำหรับสร้างกำแพงไม้');
         }
-      } else if (itemType === 'salve') {
+      } else if (type === 'torch') {
+        if (inventory.wood >= 2 && inventory.stone >= 1) {
+          inventory.wood -= 2;
+          inventory.stone -= 1;
+          player.torchTimer = 90;
+          sfx.craft();
+          spawnParticles(player.x, player.y, '#facc15', 12);
+          showToast('🔦 จุดคบเพลิงพกพา! ให้แสงสว่างรอบตัวนาน 90 วินาที');
+        } else {
+          showToast('⚠️ ต้องการ 🪵2 และ 🪨1 สำหรับคบเพลิง');
+        }
+      } else if (type === 'salve') {
         if (inventory.berry >= 2 && inventory.wood >= 1) {
           inventory.berry -= 2;
           inventory.wood -= 1;
-          player.hp = Math.min(player.maxHp, player.hp + 35);
-          player.hunger = Math.min(100, player.hunger + 40);
+          player.hp = Math.min(player.maxHp, player.hp + 40);
+          player.hunger = Math.min(100, player.hunger + 45);
           sfx.eat();
           spawnParticles(player.x, player.y, '#4ade80', 12);
-          spawnFloatingText(player.x, player.y - 25, '+35 ❤️  +40 🍖', '#4ade80');
+          spawnFloatingText(player.x, player.y - 26, '+40 ❤️  +45 🍖', '#4ade80');
           showToast('🍲 กินเบอร์รี่อุ่น ฟื้นฟูพลังชีวิตและความอิ่ม!');
         } else {
-          showToast('⚠️ ทรัพยากรไม่พอ (ต้องการ 🍒2 และ 🪵1)');
+          showToast('⚠️ ต้องการ 🍒2 และ 🪵1 สำหรับเบอร์รี่อุ่น');
         }
       }
 
@@ -847,84 +952,112 @@
 
     /**
      * ============================================================================
-     * ลูปอัปเดตตรรกะของเกม (Game Update Loop)
+     * 6. ลูปอัปเดตตรรกะและ AI มอนสเตอร์ (Update Loop)
      * ============================================================================
      */
     function update(dt) {
       if (gameState !== 'PLAYING') return;
 
-      // 1. อัปเดตเวลาโลก (กลางวัน / กลางคืน)
+      if (screenShake > 0) screenShake = Math.max(0, screenShake - dt);
+
+      // 1. ระบบเวลาโลก (กลางวัน / กลางคืน)
       worldTime += dt;
       if (worldTime >= DAY_LENGTH) {
         worldTime -= DAY_LENGTH;
         daysSurvived++;
-        showToast(`🌅 เข้าสู่วันที่ ${daysSurvived} แล้ว!`);
+        bossSpawnedTonight = false;
+        showToast(`🌅 รุ่งอรุณของวันที่ ${daysSurvived}!`);
       }
-      // ช่วงเวลา 0 - 45 วิ = กลางวัน, 45 - 75 วิ = กลางคืน
+
       const wasNight = isNight;
       isNight = worldTime >= DAY_LENGTH * 0.6;
       if (isNight && !wasNight) {
-        showToast('🌙 ความมืดเข้าปกคลุม! ระวังหมาป่าเงาออกล่า');
+        showToast('🌙 รัตติกาลมาเยือน! เหล่าอสูรแห่งความมืดเริ่มออกล่า');
+      }
+
+      // เกิดบอส "ราชันย์กวางอเวจี" ตั้งแต่คืนที่ 2 เป็นต้นไป
+      if (isNight && daysSurvived >= 2 && !bossSpawnedTonight) {
+        bossSpawnedTonight = true;
+        const angle = Math.random() * Math.PI * 2;
+        const bx = Math.max(120, Math.min(WORLD_WIDTH - 120, player.x + Math.cos(angle) * 580));
+        const by = Math.max(120, Math.min(WORLD_HEIGHT - 120, player.y + Math.sin(angle) * 580));
+        spawnMonster('boss', bx, by);
       }
 
       // 2. การเคลื่อนที่ของผู้เล่น
       let moveX = 0;
       let moveY = 0;
-      if (keys['w'] || keys['arrowup'] || touchDirs.up) moveY -= 1;
-      if (keys['s'] || keys['arrowdown'] || touchDirs.down) moveY += 1;
-      if (keys['a'] || keys['arrowleft'] || touchDirs.left) moveX -= 1;
-      if (keys['d'] || keys['arrowright'] || touchDirs.right) moveX += 1;
+      if (keys['w'] || keys['arrowup']) moveY -= 1;
+      if (keys['s'] || keys['arrowdown']) moveY += 1;
+      if (keys['a'] || keys['arrowleft']) moveX -= 1;
+      if (keys['d'] || keys['arrowright']) moveX += 1;
 
-      const isMoving = moveX !== 0 || moveY !== 0;
+      if (joystick.active) {
+        moveX += joystick.dx;
+        moveY += joystick.dy;
+      }
+
+      const isMoving = Math.hypot(moveX, moveY) > 0.08;
       const wantsSprint = (keys['shift'] || touchSprinting) && isMoving && player.stamina > 5;
 
       if (isMoving) {
         const len = Math.hypot(moveX, moveY);
-        moveX /= len;
-        moveY /= len;
+        const normX = moveX / Math.max(1, len);
+        const normY = moveY / Math.max(1, len);
 
-        const currentSpeed = wantsSprint ? player.speed * 1.55 : player.speed;
-        const nextX = player.x + moveX * currentSpeed * dt;
-        const nextY = player.y + moveY * currentSpeed * dt;
+        const spd = wantsSprint ? player.speed * 1.55 : player.speed;
+        const nextX = player.x + normX * spd * dt;
+        const nextY = player.y + normY * spd * dt;
 
-        // อัปเดตมุมหันหน้า (หากไม่ได้ใช้เมาส์เล็ง)
-        player.facingAngle = Math.atan2(moveY, moveX);
+        player.walkCycle += dt * (wantsSprint ? 15 : 10);
+        if (!usingMouseAim || joystick.active) {
+          player.facingAngle = Math.atan2(normY, normX);
+        }
 
-        // เช็กการชนขอบแผนที่และสิ่งกีดขวาง (ต้นไม้ หิน บ่อน้ำ กำแพง)
         if (!checkCollision(nextX, player.y, player.radius)) {
           player.x = Math.max(player.radius, Math.min(WORLD_WIDTH - player.radius, nextX));
         }
         if (!checkCollision(player.x, nextY, player.radius)) {
           player.y = Math.max(player.radius, Math.min(WORLD_HEIGHT - player.radius, nextY));
         }
+      } else {
+        player.walkCycle = 0;
       }
 
-      // จัดการ Stamina
       if (wantsSprint) {
-        player.stamina = Math.max(0, player.stamina - 28 * dt);
+        player.stamina = Math.max(0, player.stamina - 26 * dt);
       } else {
         player.stamina = Math.min(100, player.stamina + 18 * dt);
       }
 
-      // คูลดาวน์แอนิเมชันโจมตีและอมตะชั่วคราว
       if (player.attackTimer > 0) player.attackTimer -= dt;
       if (player.attackCooldown > 0) player.attackCooldown -= dt;
       if (player.invulnTimer > 0) player.invulnTimer -= dt;
+      if (player.torchTimer > 0) {
+        player.torchTimer -= dt;
+        if (Math.random() < 0.2) {
+          spawnParticles(
+            player.x + Math.cos(player.facingAngle - 0.5) * 20,
+            player.y + Math.sin(player.facingAngle - 0.5) * 20,
+            '#facc15', 1, 30
+          );
+        }
+      }
 
-      // 3. ค่าความหิว ความกระหาย และผลกระทบต่อเลือด
-      player.hunger = Math.max(0, player.hunger - 1.15 * dt);
-      player.thirst = Math.max(0, player.thirst - 1.55 * dt);
+      // 3. ค่าความหิว ความกระหาย และเลือด
+      player.hunger = Math.max(0, player.hunger - 1.1 * dt);
+      player.thirst = Math.max(0, player.thirst - 1.45 * dt);
 
       if (player.hunger <= 0) {
         player.hp -= 3.5 * dt;
-        if (player.hp <= 0) stats.deathReason = 'อดอาหารจนหมดเรี่ยวแรง';
+        if (player.hp <= 0) stats.deathReason = 'อดอาหารจนหมดเรี่ยวแรงกลางป่า';
       }
       if (player.thirst <= 0) {
         player.hp -= 4.5 * dt;
         if (player.hp <= 0) stats.deathReason = 'ขาดน้ำอย่างรุนแรง';
       }
 
-      // 4. อัปเดตสิ่งปลูกสร้าง (กองไฟฟื้นฟูเลือด & หมดเวลา)
+      // 4. สิ่งปลูกสร้าง (กองไฟ & กำแพง)
       let nearCampfire = false;
       for (let i = structures.length - 1; i >= 0; i--) {
         const s = structures[i];
@@ -933,8 +1066,8 @@
           if (Math.hypot(player.x - s.x, player.y - s.y) < s.lightRadius * 0.65) {
             nearCampfire = true;
           }
-          if (Math.random() < 0.25) {
-            spawnParticles(s.x + (Math.random() - 0.5) * 14, s.y - 6, '#fb923c', 1);
+          if (Math.random() < 0.3) {
+            spawnParticles(s.x + (Math.random() - 0.5) * 14, s.y - 6, '#fb923c', 1, 45);
           }
           if (s.life <= 0) {
             structures.splice(i, 1);
@@ -945,9 +1078,8 @@
         }
       }
 
-      // หากอยู่ใกล้กองไฟและไม่อดอาหาร เลือดจะค่อยๆ ฟื้นฟู
       if (nearCampfire && player.hunger > 15 && player.thirst > 15 && player.hp < player.maxHp) {
-        player.hp = Math.min(player.maxHp, player.hp + 4.5 * dt);
+        player.hp = Math.min(player.maxHp, player.hp + 5.0 * dt);
       }
 
       // 5. การเกิดใหม่ของทรัพยากร
@@ -962,92 +1094,35 @@
         }
       }
 
-      // 6. การเกิดและพฤติกรรมของศัตรู (หมาป่าเงา)
-      const maxEnemies = isNight ? Math.min(8, 2 + daysSurvived) : 1;
-      if (enemies.length < maxEnemies && Math.random() < (isNight ? 0.025 : 0.003)) {
+      // 6. การเกิดของมอนสเตอร์ธรรมดา (หมาป่าเงา & โกเลมบึงมรณะ)
+      const regularCount = monsters.filter(m => m.type !== 'boss').length;
+      const maxRegular = isNight ? Math.min(7, 2 + daysSurvived) : 1;
+      if (regularCount < maxRegular && Math.random() < (isNight ? 0.024 : 0.003)) {
         const angle = Math.random() * Math.PI * 2;
-        const spawnDist = 520 + Math.random() * 180;
-        const ex = Math.max(50, Math.min(WORLD_WIDTH - 50, player.x + Math.cos(angle) * spawnDist));
-        const ey = Math.max(50, Math.min(WORLD_HEIGHT - 50, player.y + Math.sin(angle) * spawnDist));
-        enemies.push({
-          x: ex,
-          y: ey,
-          radius: 17,
-          hp: 45 + (daysSurvived - 1) * 10,
-          maxHp: 45 + (daysSurvived - 1) * 10,
-          speed: 125 + Math.min(45, daysSurvived * 5),
-          attackTimer: 0,
-          hitFlash: 0
-        });
+        const dist = 540 + Math.random() * 160;
+        const mx = Math.max(60, Math.min(WORLD_WIDTH - 60, player.x + Math.cos(angle) * dist));
+        const my = Math.max(60, Math.min(WORLD_HEIGHT - 60, player.y + Math.sin(angle) * dist));
+        const mType = (isNight && Math.random() < 0.32) ? 'golem' : 'wolf';
+        spawnMonster(mType, mx, my);
       }
 
-      // อัปเดตการเคลื่อนที่และโจมตีของศัตรู
-      for (let i = enemies.length - 1; i >= 0; i--) {
-        const e = enemies[i];
-        if (e.hitFlash > 0) e.hitFlash -= dt;
-        if (e.attackTimer > 0) e.attackTimer -= dt;
+      // 7. อัปเดต AI มอนสเตอร์แต่ละสายพันธุ์
+      updateMonsters(dt);
 
-        // ตอนกลางวันศัตรูจะค่อยๆ สลายไป
-        if (!isNight && Math.random() < 0.015) {
-          spawnParticles(e.x, e.y, '#64748b', 6);
-          enemies.splice(i, 1);
-          continue;
+      // 8. อัปเดตคลื่นกระแทก (Shockwaves จากโกเลม/บอส)
+      for (let i = shockwaves.length - 1; i >= 0; i--) {
+        const sw = shockwaves[i];
+        sw.radius += sw.speed * dt;
+        sw.life -= dt;
+        const distToPlayer = Math.hypot(player.x - sw.x, player.y - sw.y);
+        if (!sw.hitPlayer && Math.abs(distToPlayer - sw.radius) < player.radius + 10) {
+          sw.hitPlayer = true;
+          damagePlayer(sw.damage, sw.sourceName);
         }
-
-        const dx = player.x - e.x;
-        const dy = player.y - e.y;
-        const distToPlayer = Math.hypot(dx, dy);
-
-        // เช็กว่าอยู่ในรัศมีแสงกองไฟหรือไม่ (กองไฟทำให้ศัตรูเดินช้าลง 45%)
-        let speedMult = 1.0;
-        for (const s of structures) {
-          if (s.type === 'campfire' && Math.hypot(e.x - s.x, e.y - s.y) < s.lightRadius * 0.75) {
-            speedMult = 0.55;
-            break;
-          }
-        }
-
-        if (distToPlayer > e.radius + player.radius - 4) {
-          const vx = (dx / distToPlayer) * e.speed * speedMult * dt;
-          const vy = (dy / distToPlayer) * e.speed * speedMult * dt;
-
-          // เช็กการชนกำแพงไม้ของศัตรู
-          let blockedByWall = null;
-          for (const s of structures) {
-            if (s.type === 'wall' && Math.hypot((e.x + vx) - s.x, (e.y + vy) - s.y) < e.radius + s.radius) {
-              blockedByWall = s;
-              break;
-            }
-          }
-
-          if (blockedByWall) {
-            if (e.attackTimer <= 0) {
-              blockedByWall.hp -= 15;
-              e.attackTimer = 1.0;
-              spawnParticles(blockedByWall.x, blockedByWall.y, '#b45309', 5);
-            }
-          } else {
-            e.x += vx;
-            e.y += vy;
-          }
-        } else {
-          // โจมตีผู้เล่นเมื่อเข้าประชิด
-          if (e.attackTimer <= 0 && player.invulnTimer <= 0) {
-            const dmg = 12 + Math.min(10, daysSurvived * 2);
-            player.hp -= dmg;
-            player.invulnTimer = 0.65;
-            e.attackTimer = 1.1;
-            sfx.hurt();
-            spawnParticles(player.x, player.y, '#ef4444', 10);
-            spawnFloatingText(player.x, player.y - 25, `-${dmg} ❤️`, '#ef4444');
-            if (player.hp <= 0) {
-              stats.deathReason = 'ถูกหมาป่าเงาจู่โจมในความมืด';
-            }
-          }
-        }
+        if (sw.life <= 0) shockwaves.splice(i, 1);
       }
 
-      // 7. อัปเดตอนุภาคและข้อความลอย
+      // 9. อัปเดตอนุภาคและข้อความลอย
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.x += p.vx * dt;
@@ -1063,23 +1138,234 @@
         if (ft.life <= 0) floatingTexts.splice(i, 1);
       }
 
-      // 8. เช็กเงื่อนไข Game Over
       if (player.hp <= 0) {
         player.hp = 0;
         triggerGameOver();
         return;
       }
 
-      // 9. อัปเดตตำแหน่งกล้องให้ตามผู้เล่นนุ่มๆ
       camera.x = player.x - canvas.width / 2;
       camera.y = player.y - canvas.height / 2;
 
       updateHUD();
     }
 
-    /**
-     * ตรวจสอบการชนของตัวละครกับบ่อน้ำ ต้นไม้ หิน และกำแพง
-     */
+    function damagePlayer(amount, reason) {
+      if (player.invulnTimer > 0) return;
+      player.hp -= amount;
+      player.invulnTimer = 0.65;
+      screenShake = 0.25;
+      sfx.playerHurt();
+      spawnParticles(player.x, player.y, '#ef4444', 11);
+      spawnFloatingText(player.x, player.y - 26, `-${amount} ❤️`, '#ef4444');
+      if (player.hp <= 0) {
+        stats.deathReason = reason;
+      }
+    }
+
+    function updateMonsters(dt) {
+      for (let i = monsters.length - 1; i >= 0; i--) {
+        const m = monsters[i];
+        if (m.hitFlash > 0) m.hitFlash -= dt;
+        if (m.attackCooldown > 0) m.attackCooldown -= dt;
+        m.animCycle += dt * 8;
+
+        // ตอนเช้า มอนสเตอร์กลางคืนจะค่อยๆ สลายตัว
+        if (!isNight && Math.random() < 0.015) {
+          spawnParticles(m.x, m.y, '#64748b', 8);
+          monsters.splice(i, 1);
+          continue;
+        }
+
+        const dx = player.x - m.x;
+        const dy = player.y - m.y;
+        const dist = Math.hypot(dx, dy);
+
+        // เช็กแสงกองไฟ (ลดความเร็วมอนสเตอร์ธรรมดา 45%)
+        let fireSlow = 1.0;
+        if (m.type !== 'boss') {
+          for (const s of structures) {
+            if (s.type === 'campfire' && Math.hypot(m.x - s.x, m.y - s.y) < s.lightRadius * 0.75) {
+              fireSlow = 0.55;
+              break;
+            }
+          }
+        }
+
+        // --- AI 1: หมาป่าเงา (Shadow Stalker Wolf) ---
+        if (m.type === 'wolf') {
+          if (m.state === 'CHASE') {
+            m.facingAngle = Math.atan2(dy, dx);
+            if (dist < 145 && dist > 65 && m.attackCooldown <= 0) {
+              // ใบ้ท่าก่อนพุ่งกัด!
+              m.state = 'TELEGRAPH';
+              m.stateTimer = 0.42;
+              const angle = Math.atan2(dy, dx);
+              m.lungeVx = Math.cos(angle) * 440;
+              m.lungeVy = Math.sin(angle) * 440;
+              sfx.growl();
+            } else if (dist > m.radius + player.radius - 4) {
+              moveMonsterWithWallCheck(m, (dx / dist) * m.speed * fireSlow * dt, (dy / dist) * m.speed * fireSlow * dt);
+            } else if (m.attackCooldown <= 0) {
+              damagePlayer(m.damage, 'ถูกหมาป่าเงาขย้ำในความมืด');
+              m.attackCooldown = 1.1;
+            }
+          } else if (m.state === 'TELEGRAPH') {
+            m.stateTimer -= dt;
+            if (m.stateTimer <= 0) {
+              m.state = 'LUNGE';
+              m.stateTimer = 0.25;
+            }
+          } else if (m.state === 'LUNGE') {
+            m.stateTimer -= dt;
+            moveMonsterWithWallCheck(m, m.lungeVx * dt, m.lungeVy * dt);
+            if (Math.hypot(player.x - m.x, player.y - m.y) <= m.radius + player.radius + 4) {
+              damagePlayer(m.damage + 4, 'ถูกหมาป่าเงาพุ่งกัด');
+              m.state = 'COOLDOWN';
+              m.attackCooldown = 1.4;
+            } else if (m.stateTimer <= 0) {
+              m.state = 'COOLDOWN';
+              m.attackCooldown = 1.2;
+            }
+          } else if (m.state === 'COOLDOWN') {
+            if (m.attackCooldown <= 0) m.state = 'CHASE';
+          }
+        }
+
+        // --- AI 2: โกเลมบึงมรณะ (Bog Lurker Golem) ---
+        else if (m.type === 'golem') {
+          if (m.state === 'CHASE') {
+            m.facingAngle = Math.atan2(dy, dx);
+            if (dist < 105 && m.attackCooldown <= 0) {
+              // ยกแขนทุบพื้น (Telegraph)
+              m.state = 'TELEGRAPH';
+              m.stateTimer = 0.75;
+            } else if (dist > m.radius + player.radius) {
+              moveMonsterWithWallCheck(m, (dx / dist) * m.speed * fireSlow * dt, (dy / dist) * m.speed * fireSlow * dt);
+            }
+          } else if (m.state === 'TELEGRAPH') {
+            m.stateTimer -= dt;
+            if (m.stateTimer <= 0) {
+              // ปล่อยคลื่นกระแทกวงกว้าง!
+              sfx.slam();
+              screenShake = 0.3;
+              shockwaves.push({
+                x: m.x, y: m.y,
+                radius: 25,
+                speed: 240,
+                life: 0.55,
+                damage: m.damage,
+                color: '#10b981',
+                hitPlayer: false,
+                sourceName: 'ถูกโกเลมบึงมรณะทุบจนแหลกละเอียด'
+              });
+              spawnParticles(m.x, m.y, '#10b981', 14);
+              m.state = 'COOLDOWN';
+              m.attackCooldown = 2.0;
+            }
+          } else if (m.state === 'COOLDOWN') {
+            if (m.attackCooldown <= 0) m.state = 'CHASE';
+          }
+        }
+
+        // --- AI 3: บอส ราชันย์กวางอเวจี (Abyssal Stag-Fiend Boss - 2 Phases) ---
+        else if (m.type === 'boss') {
+          // เช็กเข้าสู่เฟส 2 เมื่อเลือดต่ำกว่า 50%
+          if (m.phase === 1 && m.hp <= m.maxHp * 0.5) {
+            m.phase = 2;
+            m.speed = 152;
+            m.damage = 34;
+            sfx.bossRoar();
+            screenShake = 0.5;
+            spawnParticles(m.x, m.y, '#e879f9', 26, 170);
+            showToast('🔥 ราชันย์กวางอเวจีเข้าสู่เฟส 2! บ้าคลั่งเต็มพิกัด!');
+          }
+
+          if (m.state === 'CHASE') {
+            m.facingAngle = Math.atan2(dy, dx);
+            if (m.attackCooldown <= 0) {
+              // เลือกท่าโจมตีระหว่าง พุ่งชนความเร็วสูง หรือ ระเบิดคลื่นพลังอเวจี
+              if (dist > 130 || Math.random() < 0.65) {
+                m.state = 'TELEGRAPH_DASH';
+                m.stateTimer = m.phase === 2 ? 0.5 : 0.7;
+                const angle = Math.atan2(dy, dx);
+                const dashSpd = m.phase === 2 ? 560 : 460;
+                m.dashVx = Math.cos(angle) * dashSpd;
+                m.dashVy = Math.sin(angle) * dashSpd;
+                sfx.growl();
+              } else {
+                m.state = 'TELEGRAPH_NOVA';
+                m.stateTimer = 0.75;
+              }
+            } else if (dist > m.radius + player.radius) {
+              moveMonsterWithWallCheck(m, (dx / dist) * m.speed * dt, (dy / dist) * m.speed * dt);
+            }
+          } else if (m.state === 'TELEGRAPH_DASH') {
+            m.stateTimer -= dt;
+            if (m.stateTimer <= 0) {
+              m.state = 'DASH';
+              m.stateTimer = 0.38;
+              sfx.swing();
+            }
+          } else if (m.state === 'DASH') {
+            m.stateTimer -= dt;
+            spawnParticles(m.x, m.y, '#c084fc', 2, 50);
+            moveMonsterWithWallCheck(m, m.dashVx * dt, m.dashVy * dt, true);
+            if (Math.hypot(player.x - m.x, player.y - m.y) <= m.radius + player.radius + 6) {
+              damagePlayer(m.damage, 'ถูกเขายักษ์ของราชันย์กวางอเวจีพุ่งชน');
+            }
+            if (m.stateTimer <= 0) {
+              m.state = 'COOLDOWN';
+              m.attackCooldown = m.phase === 2 ? 1.1 : 1.7;
+            }
+          } else if (m.state === 'TELEGRAPH_NOVA') {
+            m.stateTimer -= dt;
+            if (m.stateTimer <= 0) {
+              sfx.slam();
+              screenShake = 0.4;
+              shockwaves.push({
+                x: m.x, y: m.y,
+                radius: 30,
+                speed: m.phase === 2 ? 320 : 250,
+                life: 0.65,
+                damage: m.damage,
+                color: '#c084fc',
+                hitPlayer: false,
+                sourceName: 'พ่ายแพ้ต่อคลื่นพลังอเวจีของบอส'
+              });
+              m.state = 'COOLDOWN';
+              m.attackCooldown = m.phase === 2 ? 1.3 : 1.9;
+            }
+          } else if (m.state === 'COOLDOWN') {
+            if (m.attackCooldown <= 0) m.state = 'CHASE';
+          }
+        }
+      }
+    }
+
+    function moveMonsterWithWallCheck(m, vx, vy, destroyWalls = false) {
+      let blocked = null;
+      for (const s of structures) {
+        if (s.type === 'wall' && Math.hypot((m.x + vx) - s.x, (m.y + vy) - s.y) < m.radius + s.radius) {
+          blocked = s;
+          break;
+        }
+      }
+      if (blocked) {
+        if (destroyWalls) {
+          blocked.hp -= 80;
+          spawnParticles(blocked.x, blocked.y, '#d97706', 10);
+        } else if (m.attackCooldown <= 0) {
+          blocked.hp -= 20;
+          m.attackCooldown = 1.0;
+          spawnParticles(blocked.x, blocked.y, '#d97706', 6);
+        }
+      } else {
+        m.x = Math.max(m.radius, Math.min(WORLD_WIDTH - m.radius, m.x + vx));
+        m.y = Math.max(m.radius, Math.min(WORLD_HEIGHT - m.radius, m.y + vy));
+      }
+    }
+
     function checkCollision(x, y, radius) {
       for (const p of ponds) {
         if (Math.hypot(x - p.x, y - p.y) < radius + p.radius - 8) return true;
@@ -1099,158 +1385,172 @@
 
     /**
      * ============================================================================
-     * ระบบวาดกราฟิกและแสงเงาบน Canvas (Rendering)
+     * 7. ระบบวาดกราฟิกแบบละเอียด (Bespoke Layered Procedural Art Renderer)
      * ============================================================================
      */
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       ctx.save();
-      ctx.translate(-camera.x, -camera.y);
+      const shakeX = screenShake > 0 ? (Math.random() - 0.5) * 14 * screenShake : 0;
+      const shakeY = screenShake > 0 ? (Math.random() - 0.5) * 14 * screenShake : 0;
+      ctx.translate(-camera.x + shakeX, -camera.y + shakeY);
 
-      // 1. วาดพื้นหญ้าและตารางกริดให้เห็นระยะการเดินชัดเจน
-      ctx.fillStyle = '#1e3a29';
+      // 1. พื้นหญ้าและลวดลายธรรมชาติ
+      ctx.fillStyle = '#162c20';
       ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.035)';
-      ctx.lineWidth = 1;
-      const gridSize = 80;
-      const startX = Math.floor(camera.x / gridSize) * gridSize;
-      const startY = Math.floor(camera.y / gridSize) * gridSize;
-      for (let x = startX; x < camera.x + canvas.width + gridSize; x += gridSize) {
+      // กอหญ้าพลิ้วไหว
+      const now = performance.now() * 0.003;
+      ctx.strokeStyle = '#224733';
+      ctx.lineWidth = 2;
+      for (const g of grassTufts) {
+        if (g.x < camera.x - 40 || g.x > camera.x + canvas.width + 40 ||
+            g.y < camera.y - 40 || g.y > camera.y + canvas.height + 40) continue;
+        const sway = Math.sin(now + g.swayOffset) * 3;
         ctx.beginPath();
-        ctx.moveTo(x, camera.y);
-        ctx.lineTo(x, camera.y + canvas.height);
-        ctx.stroke();
-      }
-      for (let y = startY; y < camera.y + canvas.height + gridSize; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(camera.x, y);
-        ctx.lineTo(camera.x + canvas.width, y);
+        ctx.moveTo(g.x, g.y);
+        ctx.lineTo(g.x - 4 * g.scale + sway, g.y - 9 * g.scale);
+        ctx.moveTo(g.x, g.y);
+        ctx.lineTo(g.x + 4 * g.scale + sway, g.y - 8 * g.scale);
         ctx.stroke();
       }
 
-      // ขอบเขตป่า
+      // ขอบเขตแผนที่
       ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 6;
+      ctx.lineWidth = 8;
       ctx.strokeRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
-      // 2. วาดบ่อน้ำ
+      // 2. บ่อน้ำ
       for (const p of ponds) {
-        // ริมตลิ่งทราย
-        ctx.fillStyle = '#a1887f';
+        ctx.fillStyle = '#786258';
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius + 7, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.radius + 8, 0, Math.PI * 2);
         ctx.fill();
 
-        // ผิวน้ำสีฟ้าสดใส
-        ctx.fillStyle = '#0284c7';
+        const waterGrad = ctx.createRadialGradient(p.x - 15, p.y - 15, 10, p.x, p.y, p.radius);
+        waterGrad.addColorStop(0, '#0ea5e9');
+        waterGrad.addColorStop(1, '#0369a1');
+        ctx.fillStyle = waterGrad;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fill();
 
-        // ไฮไลต์คลื่นน้ำ
-        ctx.fillStyle = 'rgba(125, 211, 252, 0.35)';
+        ctx.strokeStyle = 'rgba(186, 230, 253, 0.35)';
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(p.x - p.radius * 0.25, p.y - p.radius * 0.25, p.radius * 0.45, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.arc(p.x, p.y, p.radius * 0.65 + Math.sin(now) * 3, 0, Math.PI * 2);
+        ctx.stroke();
       }
 
-      // 3. วาดสิ่งปลูกสร้าง (กองไฟ & กำแพงไม้)
+      // 3. สิ่งปลูกสร้าง (กองไฟ & กำแพงไม้)
       for (const s of structures) {
         if (s.type === 'campfire') {
-          // วงรัศมีฟื้นฟูจางๆ
-          ctx.strokeStyle = 'rgba(251, 146, 60, 0.22)';
+          ctx.strokeStyle = 'rgba(251, 146, 60, 0.25)';
           ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.arc(s.x, s.y, s.lightRadius * 0.65, 0, Math.PI * 2);
           ctx.stroke();
 
-          // ท่อนฟืนไขว้
+          // วงหินรอบกองไฟ
+          ctx.fillStyle = '#475569';
+          for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+            ctx.beginPath();
+            ctx.arc(s.x + Math.cos(a) * 18, s.y + Math.sin(a) * 18, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // ท่อนฟืน
           ctx.strokeStyle = '#78350f';
           ctx.lineWidth = 6;
           ctx.beginPath();
-          ctx.moveTo(s.x - 14, s.y - 10);
-          ctx.lineTo(s.x + 14, s.y + 10);
-          ctx.moveTo(s.x + 14, s.y - 10);
-          ctx.lineTo(s.x - 14, s.y + 10);
+          ctx.moveTo(s.x - 13, s.y - 9); ctx.lineTo(s.x + 13, s.y + 9);
+          ctx.moveTo(s.x + 13, s.y - 9); ctx.lineTo(s.x - 13, s.y + 9);
           ctx.stroke();
 
-          // เปลวไฟเต้นระริก
-          const flicker = Math.sin(performance.now() * 0.015) * 3;
-          ctx.fillStyle = '#f97316';
+          // เปลวไฟหลายชั้น
+          const flick = Math.sin(performance.now() * 0.018) * 3.5;
+          ctx.fillStyle = '#ea580c';
           ctx.beginPath();
-          ctx.arc(s.x, s.y, 12 + flicker, 0, Math.PI * 2);
+          ctx.arc(s.x, s.y, 13 + flick, 0, Math.PI * 2);
           ctx.fill();
 
-          ctx.fillStyle = '#fde047';
+          ctx.fillStyle = '#facc15';
           ctx.beginPath();
-          ctx.arc(s.x, s.y, 6 + flicker * 0.5, 0, Math.PI * 2);
+          ctx.arc(s.x, s.y, 7 + flick * 0.5, 0, Math.PI * 2);
           ctx.fill();
         } else if (s.type === 'wall') {
-          ctx.fillStyle = '#92400e';
+          ctx.fillStyle = '#78350f';
           ctx.strokeStyle = '#451a03';
           ctx.lineWidth = 3;
           ctx.beginPath();
-          ctx.roundRect(s.x - 22, s.y - 22, 44, 44, 8);
+          ctx.roundRect(s.x - 23, s.y - 23, 46, 46, 8);
           ctx.fill();
           ctx.stroke();
 
-          // แถบเลือดกำแพงถ้าเสียหาย
+          // ลายไม้และตะปู
+          ctx.strokeStyle = '#92400e';
+          ctx.beginPath();
+          ctx.moveTo(s.x - 20, s.y - 7); ctx.lineTo(s.x + 20, s.y - 7);
+          ctx.moveTo(s.x - 20, s.y + 7); ctx.lineTo(s.x + 20, s.y + 7);
+          ctx.stroke();
+
           if (s.hp < s.maxHp) {
-            ctx.fillStyle = '#1e293b';
-            ctx.fillRect(s.x - 18, s.y - 30, 36, 5);
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(s.x - 20, s.y - 32, 40, 5);
             ctx.fillStyle = '#f59e0b';
-            ctx.fillRect(s.x - 18, s.y - 30, 36 * (s.hp / s.maxHp), 5);
+            ctx.fillRect(s.x - 20, s.y - 32, 40 * (s.hp / s.maxHp), 5);
           }
         }
       }
 
-      // 4. วาดทรัพยากร (ต้นไม้ ก้อนหิน พุ่มเบอร์รี่)
+      // 4. ทรัพยากร (ต้นไม้หลายชั้น, หินมีเหลี่ยมเงา, พุ่มเบอร์รี่)
       for (const r of resources) {
         if (r.depleted) {
-          // ตอไม้หรือรอยจางๆ รอเกิดใหม่
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
           ctx.beginPath();
           ctx.arc(r.x, r.y, r.radius * 0.45, 0, Math.PI * 2);
           ctx.fill();
           continue;
         }
 
-        const shakeX = r.shakeTimer > 0 ? (Math.random() - 0.5) * 6 : 0;
+        const shakeX = r.shakeTimer > 0 ? (Math.random() - 0.5) * 7 : 0;
         const rx = r.x + shakeX;
 
         if (r.type === 'tree') {
-          // เงาใต้ต้นไม้
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
           ctx.beginPath();
-          ctx.arc(rx + 5, r.y + 6, r.radius, 0, Math.PI * 2);
+          ctx.arc(rx + 6, r.y + 8, r.radius, 0, Math.PI * 2);
           ctx.fill();
 
-          // พุ่มใบไม้
-          ctx.fillStyle = '#15803d';
+          ctx.fillStyle = '#14532d';
           ctx.beginPath();
           ctx.arc(rx, r.y, r.radius, 0, Math.PI * 2);
           ctx.fill();
 
-          ctx.fillStyle = '#22c55e';
+          ctx.fillStyle = '#16a34a';
           ctx.beginPath();
-          ctx.arc(rx - 5, r.y - 5, r.radius * 0.65, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (r.type === 'rock') {
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-          ctx.beginPath();
-          ctx.arc(rx + 4, r.y + 5, r.radius, 0, Math.PI * 2);
+          ctx.arc(rx - 4, r.y - 4, r.radius * 0.76, 0, Math.PI * 2);
           ctx.fill();
 
-          ctx.fillStyle = '#64748b';
+          ctx.fillStyle = '#4ade80';
+          ctx.beginPath();
+          ctx.arc(rx - 8, r.y - 8, r.radius * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (r.type === 'rock') {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+          ctx.beginPath();
+          ctx.arc(rx + 5, r.y + 6, r.radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#475569';
           ctx.beginPath();
           ctx.arc(rx, r.y, r.radius, 0, Math.PI * 2);
           ctx.fill();
 
           ctx.fillStyle = '#94a3b8';
           ctx.beginPath();
-          ctx.arc(rx - 4, r.y - 4, r.radius * 0.55, 0, Math.PI * 2);
+          ctx.arc(rx - 5, r.y - 5, r.radius * 0.58, 0, Math.PI * 2);
           ctx.fill();
         } else if (r.type === 'berry') {
           ctx.fillStyle = '#166534';
@@ -1258,10 +1558,8 @@
           ctx.arc(rx, r.y, r.radius, 0, Math.PI * 2);
           ctx.fill();
 
-          // ลูกเบอร์รี่สีแดงสด
-          ctx.fillStyle = '#f43f5e';
-          const offsets = [[-6, -4], [6, -3], [0, 6], [-4, 5], [5, 5]];
-          for (const [ox, oy] of offsets) {
+          ctx.fillStyle = '#fb7185';
+          for (const [ox, oy] of [[-7, -4], [7, -3], [0, 7], [-5, 6], [6, 5], [0, -7]]) {
             ctx.beginPath();
             ctx.arc(rx + ox, r.y + oy, 3.5, 0, Math.PI * 2);
             ctx.fill();
@@ -1269,78 +1567,31 @@
         }
       }
 
-      // 5. วาดศัตรู (หมาป่าเงา)
-      for (const e of enemies) {
-        ctx.fillStyle = e.hitFlash > 0 ? '#ffffff' : '#1e1b4b';
-        ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        // ดวงตาสีแดงเรืองแสง
-        const angle = Math.atan2(player.y - e.y, player.x - e.x);
-        const eyeDist = 8;
-        ctx.fillStyle = '#ff2a55';
-        ctx.beginPath();
-        ctx.arc(e.x + Math.cos(angle - 0.4) * eyeDist, e.y + Math.sin(angle - 0.4) * eyeDist, 3, 0, Math.PI * 2);
-        ctx.arc(e.x + Math.cos(angle + 0.4) * eyeDist, e.y + Math.sin(angle + 0.4) * eyeDist, 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        // แถบเลือดศัตรู
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(e.x - 16, e.y - 26, 32, 4);
-        ctx.fillStyle = '#ef4444';
-        ctx.fillRect(e.x - 16, e.y - 26, 32 * (e.hp / e.maxHp), 4);
-      }
-
-      // 6. วาดตัวผู้เล่น
-      if (player.x !== undefined) {
+      // 5. วาดคลื่นกระแทก (Shockwaves)
+      for (const sw of shockwaves) {
         ctx.save();
-        ctx.translate(player.x, player.y);
-
-        // เอฟเฟกต์วงเหวี่ยงโจมตี
-        if (player.attackTimer > 0) {
-          ctx.strokeStyle = player.hasAxe ? 'rgba(56, 189, 248, 0.85)' : 'rgba(255, 255, 255, 0.7)';
-          ctx.lineWidth = 6;
-          ctx.beginPath();
-          ctx.arc(0, 0, player.hasAxe ? 52 : 40, player.facingAngle - 0.9, player.facingAngle + 0.9);
-          ctx.stroke();
-        }
-
-        // ตัวละคร
-        ctx.fillStyle = player.invulnTimer > 0 ? '#fca5a5' : '#38bdf8';
-        ctx.strokeStyle = '#0f172a';
-        ctx.lineWidth = 3;
+        ctx.globalAlpha = Math.max(0, sw.life * 1.5);
+        ctx.strokeStyle = sw.color;
+        ctx.lineWidth = 6;
         ctx.beginPath();
-        ctx.arc(0, 0, player.radius, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
         ctx.stroke();
-
-        // ดวงตา / ทิศทางที่หันหน้า
-        const lookX = Math.cos(player.facingAngle) * 9;
-        const lookY = Math.sin(player.facingAngle) * 9;
-        ctx.fillStyle = '#0f172a';
-        ctx.beginPath();
-        ctx.arc(lookX, lookY, 4.5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // แสดงขวานหินในมือถ้าคราฟต์แล้ว
-        if (player.hasAxe) {
-          const handAngle = player.facingAngle + (player.attackTimer > 0 ? 0.8 : 0.45);
-          const hx = Math.cos(handAngle) * 22;
-          const hy = Math.sin(handAngle) * 22;
-          ctx.fillStyle = '#cbd5e1';
-          ctx.beginPath();
-          ctx.arc(hx, hy, 6, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
         ctx.restore();
       }
 
-      // 7. วาดอนุภาค (Particles)
+      // 6. วาดมอนสเตอร์ทั้ง 3 สายพันธุ์แบบละเอียด (Procedural Monster Art)
+      for (const m of monsters) {
+        if (m.type === 'wolf') drawWolfMonster(m);
+        else if (m.type === 'golem') drawGolemMonster(m);
+        else if (m.type === 'boss') drawBossMonster(m);
+      }
+
+      // 7. วาดตัวละครผู้เล่นแบบมีรายละเอียดครบ (Detailed Survivor Hero)
+      if (player.x !== undefined) {
+        drawHeroCharacter();
+      }
+
+      // 8. อนุภาค (Particles)
       for (const p of particles) {
         ctx.globalAlpha = Math.max(0, p.life * 2);
         ctx.fillStyle = p.color;
@@ -1352,74 +1603,504 @@
 
       ctx.restore();
 
-      // 8. ระบบความมืดตอนกลางคืนและแสงสว่างรอบตัวผู้เล่น + กองไฟ
+      // 9. แสงและเงากลางคืน
       drawDayNightLighting();
 
-      // 9. วาดข้อความลอย (อยู่เหนือความมืดเพื่อให้อ่านง่ายเสมอ)
+      // 10. ข้อความลอย
       ctx.save();
       ctx.translate(-camera.x, -camera.y);
       ctx.font = 'bold 14px Kanit, sans-serif';
       ctx.textAlign = 'center';
       for (const ft of floatingTexts) {
         ctx.globalAlpha = Math.max(0, ft.life);
-        ctx.fillStyle = '#090d16';
-        ctx.fillText(ft.text, ft.x + 1, ft.y + 1);
+        ctx.fillStyle = '#060911';
+        ctx.fillText(ft.text, ft.x + 1.5, ft.y + 1.5);
         ctx.fillStyle = ft.color;
         ctx.fillText(ft.text, ft.x, ft.y);
       }
       ctx.restore();
+
+      // 11. วาดแผนที่ย่อ (Minimap)
+      drawMinimap();
     }
 
     /**
-     * วาดเลเยอร์แสงและเงากลางคืนแบบนุ่มนวล (เจาะรูแสงสว่างรอบกองไฟและตัวผู้เล่น)
+     * วาดตัวละครหลัก (Hero Survivor): มีเงา, ขาขยับเวลาเดิน, เป้สะพายหลัง, ผ้าโพกหัว, แขน และอาวุธ
+     */
+    function drawHeroCharacter() {
+      ctx.save();
+      ctx.translate(player.x, player.y);
+
+      // วงรัศมีฟันอาวุธ (Slash Arc)
+      if (player.attackTimer > 0) {
+        const wStats = getWeaponStats();
+        ctx.save();
+        ctx.strokeStyle = player.weapon === 'axe' ? 'rgba(56, 189, 248, 0.85)' :
+                          player.weapon === 'spear' ? 'rgba(250, 204, 21, 0.85)' : 'rgba(255, 255, 255, 0.75)';
+        ctx.lineWidth = player.weapon === 'spear' ? 5 : 8;
+        ctx.beginPath();
+        ctx.arc(0, 0, wStats.reach * 0.72, player.facingAngle - 0.85, player.facingAngle + 0.85);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // เงาใต้เท้า
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.beginPath();
+      ctx.ellipse(0, 12, 16, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.rotate(player.facingAngle);
+
+      // ขา 2 ข้างขยับสลับเวลาเดิน
+      const legStride = Math.sin(player.walkCycle) * 7;
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.roundRect(-6 + legStride, -11, 10, 6, 3);
+      ctx.roundRect(-6 - legStride, 5, 10, 6, 3);
+      ctx.fill();
+
+      // เป้สะพายหลังนักผจญภัย
+      ctx.fillStyle = '#92400e';
+      ctx.strokeStyle = '#451a03';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-18, -10, 10, 20, 4);
+      ctx.fill();
+      ctx.stroke();
+
+      // ลำตัวเสื้อแจ็คเก็ตสีฟ้าคราม
+      ctx.fillStyle = player.invulnTimer > 0 ? '#fca5a5' : '#0284c7';
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 13, 15, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // แขนซ้าย (ถือคบเพลิงถ้าจุดคบเพลิงอยู่)
+      const armSwing = Math.sin(player.walkCycle) * 4;
+      ctx.fillStyle = '#fcd34d';
+      ctx.beginPath();
+      ctx.arc(6 - armSwing, -13, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (player.torchTimer > 0) {
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(6 - armSwing, -13);
+        ctx.lineTo(18 - armSwing, -16);
+        ctx.stroke();
+
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath();
+        ctx.arc(20 - armSwing, -16, 5 + Math.sin(performance.now() * 0.02) * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // แขนขวา + อาวุธที่ถือ (เหวี่ยงตามจังหวะโจมตี)
+      const swingOffset = player.attackTimer > 0 ? Math.sin((player.attackTimer / 0.22) * Math.PI) * 1.1 : 0;
+      ctx.save();
+      ctx.rotate(-0.35 + swingOffset);
+
+      if (player.weapon === 'spear') {
+        // ด้ามหอกไม้ยาว + ปลายแหลม
+        ctx.strokeStyle = '#b45309';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(-6, 12);
+        ctx.lineTo(36, 12);
+        ctx.stroke();
+
+        ctx.fillStyle = '#e2e8f0';
+        ctx.beginPath();
+        ctx.moveTo(36, 8);
+        ctx.lineTo(46, 12);
+        ctx.lineTo(36, 16);
+        ctx.closePath();
+        ctx.fill();
+      } else if (player.weapon === 'axe') {
+        // ด้ามขวาน + คมขวานหิน
+        ctx.strokeStyle = '#92400e';
+        ctx.lineWidth = 4.5;
+        ctx.beginPath();
+        ctx.moveTo(2, 12);
+        ctx.lineTo(26, 12);
+        ctx.stroke();
+
+        ctx.fillStyle = '#cbd5e1';
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(19, 5, 9, 13, 3);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // มือขวา
+      ctx.fillStyle = '#fcd34d';
+      ctx.beginPath();
+      ctx.arc(8 + armSwing, 12, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // ศีรษะ + ผม + ผ้าโพกหัวสีแดง
+      ctx.fillStyle = '#fde68a';
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(2, 0, 9.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // ผ้าคาดหน้าผากสีฟ้า/แดง
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.arc(2, 0, 8.5, -Math.PI * 0.45, Math.PI * 0.45);
+      ctx.stroke();
+
+      // ดวงตา
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(8, -3.5, 1.8, 0, Math.PI * 2);
+      ctx.arc(8, 3.5, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    /**
+     * วาดมอนสเตอร์ 1: หมาป่าเงา (Shadow Stalker Wolf) - 4 ขา หางสะบัด ขนแหลม ตาแดง
+     */
+    function drawWolfMonster(m) {
+      ctx.save();
+      ctx.translate(m.x, m.y);
+
+      // วงเตือนสีแดงก่อนพุ่งกัด
+      if (m.state === 'TELEGRAPH') {
+        ctx.strokeStyle = 'rgba(244, 63, 94, 0.85)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(m.lungeVx * 0.25, m.lungeVy * 0.25);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // เงา
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+      ctx.beginPath();
+      ctx.ellipse(0, 10, 22, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.save();
+      ctx.rotate(m.facingAngle);
+
+      const legMove = Math.sin(m.animCycle * 1.4) * 6;
+      const bodyColor = m.hitFlash > 0 ? '#ffffff' : (m.state === 'TELEGRAPH' ? '#4c0519' : '#18181b');
+
+      // ขา 4 ข้าง
+      ctx.fillStyle = '#09090b';
+      ctx.beginPath();
+      ctx.roundRect(6 + legMove, -13, 8, 5, 2);
+      ctx.roundRect(6 - legMove, 8, 8, 5, 2);
+      ctx.roundRect(-12 - legMove, -13, 8, 5, 2);
+      ctx.roundRect(-12 + legMove, 8, 8, 5, 2);
+      ctx.fill();
+
+      // หางฟูสะบัด
+      const tailWag = Math.sin(m.animCycle) * 5;
+      ctx.strokeStyle = bodyColor;
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-16, 0);
+      ctx.lineTo(-28, tailWag);
+      ctx.stroke();
+
+      // ลำตัวเพรียวยาว + แผงขนแหลม
+      ctx.fillStyle = bodyColor;
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(-2, 0, 18, 11, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // หัวและปากแหลม + หูตั้ง 2 ข้าง
+      ctx.fillStyle = bodyColor;
+      ctx.beginPath();
+      ctx.moveTo(10, -9);
+      ctx.lineTo(25, 0);
+      ctx.lineTo(10, 9);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // หูหมาป่า
+      ctx.beginPath();
+      ctx.moveTo(8, -7); ctx.lineTo(4, -14); ctx.lineTo(13, -6);
+      ctx.moveTo(8, 7); ctx.lineTo(4, 14); ctx.lineTo(13, 6);
+      ctx.fill();
+
+      // ดวงตาสีแดงฉาน
+      ctx.fillStyle = '#ff1e56';
+      ctx.beginPath();
+      ctx.arc(15, -4, 2.3, 0, Math.PI * 2);
+      ctx.arc(15, 4, 2.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+
+      // แถบเลือด
+      drawMonsterHpBar(m, -26);
+      ctx.restore();
+    }
+
+    /**
+     * วาดมอนสเตอร์ 2: โกเลมบึงมรณะ (Bog Lurker Golem) - ร่างหินยักษ์ปกคลุมตะไคร่น้ำ + อักขระเรืองแสง
+     */
+    function drawGolemMonster(m) {
+      ctx.save();
+      ctx.translate(m.x, m.y);
+
+      // วงเตือนพื้นที่ทุบพื้น (Telegraph Circle)
+      if (m.state === 'TELEGRAPH') {
+        const progress = 1 - (m.stateTimer / 0.75);
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.18)';
+        ctx.strokeStyle = 'rgba(52, 211, 153, 0.9)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, 120 * progress, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // เงายักษ์
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.48)';
+      ctx.beginPath();
+      ctx.ellipse(0, 18, 30, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.save();
+      ctx.rotate(m.facingAngle);
+
+      const armLift = m.state === 'TELEGRAPH' ? 8 : Math.sin(m.animCycle * 0.8) * 4;
+      const stoneColor = m.hitFlash > 0 ? '#ffffff' : '#334155';
+
+      // แขนหินขนาดมหึมา 2 ข้าง
+      ctx.fillStyle = stoneColor;
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(4 + armLift, -32, 20, 14, 6);
+      ctx.roundRect(4 + armLift, 18, 20, 14, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      // ลำตัวทรงเหลี่ยมมน
+      ctx.fillStyle = stoneColor;
+      ctx.beginPath();
+      ctx.roundRect(-22, -24, 44, 48, 14);
+      ctx.fill();
+      ctx.stroke();
+
+      // ตะไคร่น้ำสีเขียวมรกตบนไหล่และหลัง
+      ctx.fillStyle = '#059669';
+      ctx.beginPath();
+      ctx.arc(-8, -12, 11, 0, Math.PI * 2);
+      ctx.arc(-10, 10, 10, 0, Math.PI * 2);
+      ctx.fill();
+
+      // อักขระรูนและดวงตาเรืองแสงสีเขียวมรกต
+      ctx.fillStyle = '#34d399';
+      ctx.beginPath();
+      ctx.arc(14, -7, 3.5, 0, Math.PI * 2);
+      ctx.arc(14, 7, 3.5, 0, Math.PI * 2);
+      ctx.arc(0, 0, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+
+      drawMonsterHpBar(m, -38);
+      ctx.restore();
+    }
+
+    /**
+     * วาดมอนสเตอร์ 3 (บอส): ราชันย์กวางอเวจี (Abyssal Stag-Fiend Boss)
+     */
+    function drawBossMonster(m) {
+      ctx.save();
+      ctx.translate(m.x, m.y);
+
+      // ออร่าพลังงานบอส (เฟส 2 เปลี่ยนเป็นสีม่วงแดงเดือดพล่าน)
+      const auraColor = m.phase === 2 ? 'rgba(232, 121, 249, 0.25)' : 'rgba(139, 92, 246, 0.18)';
+      ctx.fillStyle = auraColor;
+      ctx.beginPath();
+      ctx.arc(0, 0, m.radius + 16 + Math.sin(performance.now() * 0.01) * 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // เส้นเตือนท่าพุ่งชน (Dash Telegraph)
+      if (m.state === 'TELEGRAPH_DASH') {
+        ctx.strokeStyle = 'rgba(232, 121, 249, 0.9)';
+        ctx.lineWidth = 5;
+        ctx.setLineDash([10, 6]);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(m.dashVx * 0.38, m.dashVy * 0.38);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      } else if (m.state === 'TELEGRAPH_NOVA') {
+        ctx.strokeStyle = 'rgba(244, 63, 94, 0.9)';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(0, 0, 140 * (1 - m.stateTimer / 0.75), 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // เงาใต้ร่างบอส
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+      ctx.beginPath();
+      ctx.ellipse(0, 22, 36, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.save();
+      ctx.rotate(m.facingAngle);
+
+      const bodyColor = m.hitFlash > 0 ? '#ffffff' : '#1e1035';
+      const glowColor = m.phase === 2 ? '#f43f5e' : '#c084fc';
+
+      // กรงเล็บยักษ์ 2 ข้าง
+      const clawReach = Math.sin(m.animCycle) * 5;
+      ctx.fillStyle = '#0f0720';
+      ctx.strokeStyle = glowColor;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(10, -26);
+      ctx.lineTo(34 + clawReach, -34);
+      ctx.lineTo(24, -18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(10, 26);
+      ctx.lineTo(34 - clawReach, 34);
+      ctx.lineTo(24, 18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // ลำตัวอสูรเงาทมิฬ
+      ctx.fillStyle = bodyColor;
+      ctx.strokeStyle = glowColor;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, m.radius - 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // เขากวางอเวจีขนาดมหึมาแตกแขนง 2 ข้าง
+      ctx.strokeStyle = m.phase === 2 ? '#fb7185' : '#e9d5ff';
+      ctx.lineWidth = 4.5;
+      ctx.lineCap = 'round';
+      // เขาซ้าย
+      ctx.beginPath();
+      ctx.moveTo(4, -16);
+      ctx.quadraticCurveTo(-14, -42, -30, -34);
+      ctx.moveTo(-10, -32);
+      ctx.lineTo(-6, -46);
+      ctx.stroke();
+      // เขาขวา
+      ctx.beginPath();
+      ctx.moveTo(4, 16);
+      ctx.quadraticCurveTo(-14, 42, -30, 34);
+      ctx.moveTo(-10, 32);
+      ctx.lineTo(-6, 46);
+      ctx.stroke();
+
+      // แกนพลังงานกลางหลัง
+      ctx.fillStyle = glowColor;
+      ctx.beginPath();
+      ctx.arc(-4, 0, 9 + Math.sin(performance.now() * 0.015) * 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // กะโหลกและดวงตา 4 ดวงเรืองแสง
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath();
+      ctx.moveTo(14, -12);
+      ctx.lineTo(32, 0);
+      ctx.lineTo(14, 12);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = glowColor;
+      ctx.beginPath();
+      ctx.arc(20, -5, 3, 0, Math.PI * 2);
+      ctx.arc(20, 5, 3, 0, Math.PI * 2);
+      ctx.arc(14, -8, 2, 0, Math.PI * 2);
+      ctx.arc(14, 8, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+      ctx.restore();
+    }
+
+    function drawMonsterHpBar(m, offsetY) {
+      const w = m.radius * 1.8;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.fillRect(-w / 2, offsetY, w, 5);
+      ctx.fillStyle = m.type === 'golem' ? '#10b981' : '#ef4444';
+      ctx.fillRect(-w / 2, offsetY, w * Math.max(0, m.hp / m.maxHp), 5);
+    }
+
+    /**
+     * วาดแสงและเงาช่วงกลางวัน-กลางคืน
      */
     function drawDayNightLighting() {
-      // คำนวณระดับความมืด (0.0 = สว่างสุด, 0.82 = มืดสุดตอนกลางคืน)
       let darkness = 0;
       const ratio = worldTime / DAY_LENGTH;
       if (ratio >= 0.5 && ratio < 0.6) {
-        // ช่วงพลบค่ำ ค่อยๆ มืดลง
-        darkness = ((ratio - 0.5) / 0.1) * 0.82;
+        darkness = ((ratio - 0.5) / 0.1) * 0.84;
       } else if (ratio >= 0.6 && ratio < 0.92) {
-        // กลางคืนเต็มตัว
-        darkness = 0.82;
+        darkness = 0.84;
       } else if (ratio >= 0.92) {
-        // เช้ามืด ค่อยๆ สว่างขึ้น
-        darkness = (1 - (ratio - 0.92) / 0.08) * 0.82;
+        darkness = (1 - (ratio - 0.92) / 0.08) * 0.84;
       }
 
       if (darkness <= 0.02) return;
 
-      // สร้างเลเยอร์ความมืดชั่วคราว
       const lightCanvas = document.createElement('canvas');
       lightCanvas.width = canvas.width;
       lightCanvas.height = canvas.height;
       const lctx = lightCanvas.getContext('2d');
 
-      lctx.fillStyle = `rgba(6, 11, 25, ${darkness})`;
+      lctx.fillStyle = `rgba(5, 9, 22, ${darkness})`;
       lctx.fillRect(0, 0, lightCanvas.width, lightCanvas.height);
 
-      // เจาะแสงสว่างด้วย destination-out
       lctx.globalCompositeOperation = 'destination-out';
 
-      // แสงจางๆ รอบตัวผู้เล่น
+      // แสงรอบตัวผู้เล่น (กว้างขึ้นถ้าถือคบเพลิง)
       const px = player.x - camera.x;
       const py = player.y - camera.y;
-      const pGrad = lctx.createRadialGradient(px, py, 25, px, py, 125);
-      pGrad.addColorStop(0, 'rgba(0,0,0,0.95)');
+      const pRadius = player.torchTimer > 0 ? 225 : 120;
+      const pGrad = lctx.createRadialGradient(px, py, 25, px, py, pRadius);
+      pGrad.addColorStop(0, 'rgba(0,0,0,0.98)');
       pGrad.addColorStop(1, 'rgba(0,0,0,0)');
       lctx.fillStyle = pGrad;
       lctx.beginPath();
-      lctx.arc(px, py, 125, 0, Math.PI * 2);
+      lctx.arc(px, py, pRadius, 0, Math.PI * 2);
       lctx.fill();
 
-      // แสงสว่างอบอุ่นรอบกองไฟทุกกอง
+      // แสงจากกองไฟ
       for (const s of structures) {
         if (s.type === 'campfire') {
           const sx = s.x - camera.x;
           const sy = s.y - camera.y;
-          const flicker = Math.sin(performance.now() * 0.01) * 10;
-          const r = s.lightRadius + flicker;
+          const r = s.lightRadius + Math.sin(performance.now() * 0.012) * 10;
           const fGrad = lctx.createRadialGradient(sx, sy, 20, sx, sy, r);
           fGrad.addColorStop(0, 'rgba(0,0,0,1)');
           fGrad.addColorStop(0.7, 'rgba(0,0,0,0.75)');
@@ -1435,8 +2116,56 @@
     }
 
     /**
+     * วาดแผนที่ย่อ (Minimap) มุมขวาบน
+     */
+    function drawMinimap() {
+      const mw = minimapCanvas.width;
+      const mh = minimapCanvas.height;
+      const scaleX = mw / WORLD_WIDTH;
+      const scaleY = mh / WORLD_HEIGHT;
+
+      mctx.clearRect(0, 0, mw, mh);
+      mctx.fillStyle = '#0b1912';
+      mctx.fillRect(0, 0, mw, mh);
+
+      // บ่อน้ำ
+      mctx.fillStyle = '#0284c7';
+      for (const p of ponds) {
+        mctx.beginPath();
+        mctx.arc(p.x * scaleX, p.y * scaleY, Math.max(2.5, p.radius * scaleX), 0, Math.PI * 2);
+        mctx.fill();
+      }
+
+      // กองไฟ
+      mctx.fillStyle = '#fb923c';
+      for (const s of structures) {
+        if (s.type === 'campfire') {
+          mctx.beginPath();
+          mctx.arc(s.x * scaleX, s.y * scaleY, 3, 0, Math.PI * 2);
+          mctx.fill();
+        }
+      }
+
+      // มอนสเตอร์และบอส
+      for (const m of monsters) {
+        mctx.fillStyle = m.type === 'boss' ? '#e879f9' : '#ef4444';
+        mctx.beginPath();
+        mctx.arc(m.x * scaleX, m.y * scaleY, m.type === 'boss' ? 4.5 : 2.5, 0, Math.PI * 2);
+        mctx.fill();
+      }
+
+      // ตัวผู้เล่น
+      if (player.x !== undefined) {
+        mctx.fillStyle = '#38bdf8';
+        mctx.beginPath();
+        mctx.arc(player.x * scaleX, player.y * scaleY, 3.5, 0, Math.PI * 2);
+        mctx.fill();
+      }
+    }
+
+    /**
      * ============================================================================
-     * อัปเดต UI (HUD) และหน้าจอต่างๆ
+     * 8. อัปเดต UI และหน้าจอสถานะ (HUD & Modals)
      * ============================================================================
      */
     function updateHUD() {
@@ -1454,28 +2183,49 @@
 
       document.getElementById('dayCount').textContent = daysSurvived;
       document.getElementById('timeIcon').textContent = isNight ? '🌙' : '☀️';
-      document.getElementById('timeLabel').textContent = isNight ? 'กลางคืน (ระวังภัย!)' : 'ช่วงกลางวัน';
+      document.getElementById('timeLabel').textContent = isNight ? 'กลางคืน (ระวังภัย!)' : 'กลางวัน';
 
       document.getElementById('woodCount').textContent = inventory.wood;
       document.getElementById('stoneCount').textContent = inventory.stone;
       document.getElementById('berryCount').textContent = inventory.berry;
 
-      document.getElementById('weaponStatus').textContent = player.hasAxe
-        ? '🪓 ขวานหิน (ดาเมจ 35)'
-        : '✊ มือเปล่า (ดาเมจ 15)';
+      const wStats = getWeaponStats();
+      document.getElementById('weaponStatus').textContent = wStats.label;
 
-      // อัปเดตสถานะปุ่มคราฟต์ว่ากดได้หรือไม่
+      // อัปเดตแถบเลือดบอส
+      const activeBoss = monsters.find(m => m.type === 'boss');
+      const bossHud = document.getElementById('bossHud');
+      if (activeBoss) {
+        bossHud.classList.remove('hidden');
+        document.getElementById('bossNameText').textContent = `👑 ${activeBoss.name} (เฟส ${activeBoss.phase})`;
+        document.getElementById('bossHpText').textContent = `${Math.ceil(activeBoss.hp)}/${activeBoss.maxHp}`;
+        document.getElementById('bossHpBar').style.width = `${Math.max(0, (activeBoss.hp / activeBoss.maxHp) * 100)}%`;
+      } else {
+        bossHud.classList.add('hidden');
+      }
+
+      // ปุ่มคราฟต์
+      const spearBtn = document.getElementById('craftSpearBtn');
+      if (player.weapon === 'spear' || player.weapon === 'axe') {
+        spearBtn.disabled = true;
+        document.getElementById('spearCostText').textContent = 'สร้างแล้ว ✓';
+      } else {
+        spearBtn.disabled = inventory.wood < 4;
+        document.getElementById('spearCostText').textContent = '🪵4';
+      }
+
       const axeBtn = document.getElementById('craftAxeBtn');
-      if (player.hasAxe) {
+      if (player.weapon === 'axe') {
         axeBtn.disabled = true;
         document.getElementById('axeCostText').textContent = 'สร้างแล้ว ✓';
       } else {
-        axeBtn.disabled = !(inventory.wood >= 3 && inventory.stone >= 2);
-        document.getElementById('axeCostText').textContent = '🪵3 🪨2';
+        axeBtn.disabled = !(inventory.wood >= 4 && inventory.stone >= 3);
+        document.getElementById('axeCostText').textContent = '🪵4 🪨3';
       }
 
       document.getElementById('craftFireBtn').disabled = !(inventory.wood >= 5 && inventory.stone >= 3);
-      document.getElementById('craftWallBtn').disabled = !(inventory.wood >= 4);
+      document.getElementById('craftWallBtn').disabled = inventory.wood < 4;
+      document.getElementById('craftTorchBtn').disabled = !(inventory.wood >= 2 && inventory.stone >= 1);
       document.getElementById('craftSalveBtn').disabled = !(inventory.berry >= 2 && inventory.wood >= 1);
     }
 
@@ -1492,7 +2242,7 @@
 
     /**
      * ============================================================================
-     * ตัวจัดการ Event (คีย์บอร์ด, เมาส์, หน้าจอสัมผัส, ปรับขนาดหน้าจอ)
+     * 9. ตัวจัดการอินพุตทั้งคอมพิวเตอร์และมือถือ (Input Handlers)
      * ============================================================================
      */
     function resizeCanvas() {
@@ -1505,21 +2255,22 @@
     }
     window.addEventListener('resize', resizeCanvas);
 
-    // คีย์บอร์ด
     window.addEventListener('keydown', (e) => {
       const k = e.key.toLowerCase();
       keys[k] = true;
+      if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) {
+        usingMouseAim = false;
+      }
 
       if (gameState === 'PLAYING') {
         if (k === 'e') handleInteract();
-        if (k === ' ') {
-          e.preventDefault();
-          handleAttack();
-        }
-        if (k === '1') craftItem('axe');
-        if (k === '2') craftItem('campfire');
-        if (k === '3') craftItem('wall');
-        if (k === '4') craftItem('salve');
+        if (k === ' ') { e.preventDefault(); handleAttack(); }
+        if (k === '1') craftItem('spear');
+        if (k === '2') craftItem('axe');
+        if (k === '3') craftItem('campfire');
+        if (k === '4') craftItem('wall');
+        if (k === '5') craftItem('torch');
+        if (k === '6') craftItem('salve');
         if (k === 'escape' || k === 'p') {
           gameState = 'PAUSED';
           document.getElementById('pauseModal').classList.remove('hidden');
@@ -1534,14 +2285,12 @@
       keys[e.key.toLowerCase()] = false;
     });
 
-    // เมาส์เล็งและคลิกโจมตีบน Canvas
     canvas.addEventListener('mousemove', (e) => {
-      mousePos.x = e.clientX;
-      mousePos.y = e.clientY;
+      usingMouseAim = true;
       if (gameState === 'PLAYING' && player.x !== undefined) {
-        const worldMouseX = mousePos.x + camera.x;
-        const worldMouseY = mousePos.y + camera.y;
-        player.facingAngle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
+        const wx = e.clientX + camera.x;
+        const wy = e.clientY + camera.y;
+        player.facingAngle = Math.atan2(wy - player.y, wx - player.x);
       }
     });
 
@@ -1551,20 +2300,53 @@
       }
     });
 
-    // ปุ่มควบคุมหน้าจอสัมผัสสำหรับมือถือ (Touch Controls)
-    document.querySelectorAll('[data-dir]').forEach((btn) => {
-      const dir = btn.getAttribute('data-dir');
-      const setDir = (val) => {
-        touchDirs[dir] = val;
-        if (val) btn.classList.add('active');
-        else btn.classList.remove('active');
-      };
-      btn.addEventListener('touchstart', (e) => { e.preventDefault(); setDir(true); });
-      btn.addEventListener('touchend', (e) => { e.preventDefault(); setDir(false); });
-      btn.addEventListener('mousedown', () => setDir(true));
-      btn.addEventListener('mouseup', () => setDir(false));
-      btn.addEventListener('mouseleave', () => setDir(false));
+    // ระบบจอยสติ๊กสัมผัสสำหรับมือถือ (Virtual Joystick)
+    const joystickZone = document.getElementById('joystickZone');
+    const joystickKnob = document.getElementById('joystickKnob');
+
+    function handleJoystickMove(clientX, clientY) {
+      const rect = joystickZone.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const maxDist = rect.width * 0.36;
+
+      let dx = clientX - centerX;
+      let dy = clientY - centerY;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist > maxDist) {
+        dx = (dx / dist) * maxDist;
+        dy = (dy / dist) * maxDist;
+      }
+
+      joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+      joystick.dx = dx / maxDist;
+      joystick.dy = dy / maxDist;
+    }
+
+    joystickZone.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      joystick.active = true;
+      const touch = e.changedTouches[0];
+      handleJoystickMove(touch.clientX, touch.clientY);
     });
+
+    joystickZone.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (!joystick.active) return;
+      const touch = e.changedTouches[0];
+      handleJoystickMove(touch.clientX, touch.clientY);
+    });
+
+    const resetJoystick = (e) => {
+      e.preventDefault();
+      joystick.active = false;
+      joystick.dx = 0;
+      joystick.dy = 0;
+      joystickKnob.style.transform = 'translate(0px, 0px)';
+    };
+    joystickZone.addEventListener('touchend', resetJoystick);
+    joystickZone.addEventListener('touchcancel', resetJoystick);
 
     const sprintBtn = document.getElementById('touchSprintBtn');
     sprintBtn.addEventListener('touchstart', (e) => {
@@ -1572,22 +2354,27 @@
       touchSprinting = !touchSprinting;
       sprintBtn.classList.toggle('active', touchSprinting);
     });
-    sprintBtn.addEventListener('click', () => {
-      touchSprinting = !touchSprinting;
-      sprintBtn.classList.toggle('active', touchSprinting);
-    });
 
+    document.getElementById('touchInteractBtn').addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      handleInteract();
+    });
     document.getElementById('touchInteractBtn').addEventListener('click', handleInteract);
+
+    document.getElementById('touchAttackBtn').addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      handleAttack();
+    });
     document.getElementById('touchAttackBtn').addEventListener('click', handleAttack);
 
-    // ปุ่ม UI หลัก
+    // ปุ่มหน้าต่างหลัก
     document.getElementById('startGameBtn').addEventListener('click', () => {
       sfx.init();
       document.getElementById('startScreen').classList.add('hidden');
       document.getElementById('hudContainer').classList.remove('hidden');
       initGame();
       gameState = 'PLAYING';
-      showToast('☀️ ยินดีต้อนรับ! รีบเก็บไม้ หิน และเบอร์รี่ก่อนมืด');
+      showToast('☀️ รีบเก็บไม้ หิน และเบอร์รี่ เตรียมรับมือคืนแรก!');
     });
 
     document.getElementById('pauseBtn').addEventListener('click', () => {
@@ -1622,7 +2409,7 @@
 
     /**
      * ============================================================================
-     * ลูปหลักของเกม (Main RequestAnimationFrame Loop)
+     * 10. ลูปเรนเดอร์หลัก (Main Loop)
      * ============================================================================
      */
     function gameLoop(timestamp) {
@@ -1635,7 +2422,6 @@
       requestAnimationFrame(gameLoop);
     }
 
-    // เริ่มต้นระบบเมื่อโหลดหน้าเว็บเสร็จสมบูรณ์
     window.onload = function () {
       resizeCanvas();
       initGame();
