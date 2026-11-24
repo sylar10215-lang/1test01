@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mini Survival</title>
+  <style>
+    body { margin: 0; background: #111; color: #fff; font-family: sans-serif; text-align: center; }
+    canvas { background: #2d5a27; display: block; margin: 16px auto; border: 2px solid #555; }
+  </style>
+</head>
+<body>
+  <p>เดิน: ปุ่มลูกศร | เก็บไม้: กด <b>E</b> | สร้างกองไฟ (ใช้ไม้ 3): กด <b>C</b></p>
+  <canvas id="game" width="640" height="400"></canvas>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const player = { x: 320, y: 200, size: 20, speed: 3, hp: 100, hunger: 100 };
+    let wood = 0;
+    const trees = [
+      { x: 120, y: 90, r: 16 },
+      { x: 500, y: 120, r: 16 },
+      { x: 200, y: 310, r: 16 },
+      { x: 470, y: 300, r: 16 }
+    ];
+    const campfires = [];
+    const keys = {};
+
+    window.addEventListener("keydown", (e) => {
+      keys[e.key.toLowerCase()] = true;
+      if (e.key.toLowerCase() === "e") gatherWood();
+      if (e.key.toLowerCase() === "c") craftCampfire();
+    });
+    window.addEventListener("keyup", (e) => (keys[e.key.toLowerCase()] = false));
+
+    function gatherWood() {
+      for (const tree of trees) {
+        const dist = Math.hypot(player.x - tree.x, player.y - tree.y);
+        if (dist < 45) {
+          wood += 1;
+          player.hunger = Math.min(100, player.hunger + 5);
+          break;
+        }
+      }
+    }
+
+    function craftCampfire() {
+      if (wood >= 3) {
+        wood -= 3;
+        campfires.push({ x: player.x, y: player.y });
+      }
+    }
+
+    function update() {
+      if (keys["arrowup"]) player.y -= player.speed;
+      if (keys["arrowdown"]) player.y += player.speed;
+      if (keys["arrowleft"]) player.x -= player.speed;
+      if (keys["arrowright"]) player.x += player.speed;
+
+      player.x = Math.max(player.size, Math.min(canvas.width - player.size, player.x));
+      player.y = Math.max(player.size, Math.min(canvas.height - player.size, player.y));
+
+      player.hunger = Math.max(0, player.hunger - 0.03);
+      if (player.hunger <= 0) player.hp = Math.max(0, player.hp - 0.08);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (const fire of campfires) {
+        ctx.fillStyle = "orange";
+        ctx.beginPath();
+        ctx.arc(fire.x, fire.y, 14, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      for (const tree of trees) {
+        ctx.fillStyle = "#1b3b18";
+        ctx.beginPath();
+        ctx.arc(tree.x, tree.y, tree.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "#38bdf8";
+      ctx.fillRect(player.x - player.size / 2, player.y - player.size / 2, player.size, player.size);
+
+      ctx.fillStyle = "#fff";
+      ctx.font = "14px sans-serif";
+      ctx.fillText(`HP: ${Math.ceil(player.hp)} | Hunger: ${Math.ceil(player.hunger)} | Wood: ${wood}`, 12, 24);
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+    loop();
+  </script>
+</body>
+</html>
